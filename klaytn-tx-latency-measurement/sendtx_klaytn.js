@@ -1,3 +1,5 @@
+// Klaytn transaction latency measurement. 
+// Reference of Sending Transaction using CaverJS: https://docs.kaikas.io/02_api_reference/02_caver_methods
 const fs = require('fs')
 const Caver = require('caver-js')
 const axios = require('axios')

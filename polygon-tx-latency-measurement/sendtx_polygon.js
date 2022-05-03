@@ -1,3 +1,5 @@
+// Polygon PoS transaction latency measurement. 
+// Reference of Sending Transaction using Javascript: https://docs.polygon.technology/docs/develop/eip1559-transactions/how-to-send-eip1559-transactions/ 
 const Web3 = require('web3')
 const fs = require('fs')
 const AWS = require('aws-sdk')

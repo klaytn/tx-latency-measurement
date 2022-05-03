@@ -1,3 +1,5 @@
+// Avalanche C-chain transaction latency measurement. 
+// Reference of Sending Transaction using Javascript: https://docs.avax.network/quickstart/sending-transactions-with-dynamic-fees-using-javascript/
 const ethers = require('ethers');
 const Avalanche = require('avalanche').Avalanche;
 const AWS = require('aws-sdk');

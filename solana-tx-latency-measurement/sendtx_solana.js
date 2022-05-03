@@ -1,3 +1,5 @@
+// Solana transaction latency measurement. 
+// Reference of Sending Transaction using SolanaJS: https://docs.solana.com/developing/clients/javascript-api 
 const web3 = require("@solana/web3.js");
 const Base58 = require('base-58');
 const parquet = require('parquetjs-lite');
