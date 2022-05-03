@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "avalanche": "^3.13.3",
+    "aws-sdk": "^2.1114.0",
+    "axios": "^0.26.1",
+    "coingecko-api": "^1.0.10",
+    "dotenv": "^16.0.0",
+    "ethers": "^5.6.4",
+    "moment": "^2.29.2",
+    "parquetjs-lite": "^0.8.7"
+  }
+}
