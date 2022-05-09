@@ -139,9 +139,6 @@ async function sendTx() {
             console.log(`Nonce ${nonce} = ${PrevNonce}`)
             return;
         }
-        else{
-            console.log(`Nonce ${nonce} != ${PrevNonce}`)
-        }
 
         // constructs actions that will be passed to the createTransaction method below
         const actions = [nearAPI.transactions.transfer(amount)];
@@ -154,7 +151,7 @@ async function sendTx() {
             'block', 
             [accessKey.block_hash]
         );
-        console.log(accessKey.block_hash)
+
         var chunkList = [] 
 
         block.chunks.forEach(element => {
