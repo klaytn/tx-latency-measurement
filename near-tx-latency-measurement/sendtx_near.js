@@ -167,11 +167,11 @@ async function sendTx() {
                 [chunkList[i]]
             )
             // console.log(chunk, chunk.header.gas_used)
-            gasUsed += chunk.header.gas_used
+            gasUsed += Number(chunk.header.gas_used)
             numTx += chunk.transactions.length
         }
         data.numOfTxInLatestBlock = numTx
-        data.resourceUsedOfLatestBlock = gasUsed
+        data.resourceUsedOfLatestBlock = Math.round(gasUsed * (10**(-9)))//in unit of Ggas (10**9) 
         
         // create transaction
         const transaction = nearAPI.transactions.createTransaction(
