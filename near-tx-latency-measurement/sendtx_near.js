@@ -147,10 +147,13 @@ async function sendTx() {
         // this hash was retrieved earlier when creating the accessKey 
         // this is required to prove the tx was recently constructed (within 24hrs)
         const recentBlockHash = nearAPI.utils.serialize.base_decode(accessKey.block_hash);
+        const startGetBlock = new Date().getTime()
         const block = await provider.sendJsonRpc(
             'block', 
             [accessKey.block_hash]
         );
+        const endGetBlock = new Date().getTime()
+        data.pingTime = endGetBlock - startGetBlock
 
         var chunkList = [] 
 
