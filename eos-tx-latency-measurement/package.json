@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "aws-sdk": "^2.1131.0",
+    "axios": "^0.27.2",
+    "coingecko-api": "^1.0.10",
+    "dotenv": "^16.0.0",
+    "eosjs": "^22.1.0",
+    "moment": "^2.29.3",
+    "node-fetch": "^2.6.7",
+    "parquetjs-lite": "^0.8.7"
+  }
+}
