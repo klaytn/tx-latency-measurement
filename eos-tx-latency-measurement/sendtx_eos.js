@@ -157,7 +157,6 @@ async function sendTx(){
     data.endTime = end 
   
     // Calculate CPU fee and CPU fee in USD 
-    console.log(result.processed.receipt.cpu_usage_us)
     data.txFee = cpuPrice * result.processed.receipt.cpu_usage_us;
     var EOStoUSD;
     await CoinGeckoClient.simple.price({
@@ -167,7 +166,6 @@ async function sendTx(){
       EOStoUSD = response.data["eos"]["usd"]
     })
     data.txFeeInUSD = data.txFee * EOStoUSD 
-    console.log(EOStoUSD)
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
       console.log("failed to execute.", err.toString())
