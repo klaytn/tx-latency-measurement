@@ -182,12 +182,12 @@ async function sendTx(){
 async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
-    sendTx()
+
     // run sendTx every SEND_TX_INTERVAL
-    // const interval = eval(process.env.SEND_TX_INTERVAL)
-    // setInterval(()=>{
-    //     sendTx()
-    // }, interval)
+    const interval = eval(process.env.SEND_TX_INTERVAL)
+    setInterval(()=>{
+        sendTx()
+    }, interval)
 
 }
 
