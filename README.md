@@ -22,7 +22,7 @@ Using this repo, you can measure transaction latency on differenct blockchain pl
 - [x] Fantom
 - [x] Polkadot
 - [ ] Cosmos
-- [ ] BNB
+- [x] BNB
 - [ ] Hedera
 - [ ] Elrond
 - [ ] Harmony
