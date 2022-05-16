@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@elrondnetwork/erdjs": "^10.2.4",
+    "@elrondnetwork/erdjs-network-providers": "^0.1.5",
+    "@elrondnetwork/erdjs-walletcore": "^1.0.0",
+    "aws-sdk": "^2.1135.0",
+    "axios": "^0.27.2",
+    "browserify": "^17.0.0",
+    "coingecko-api": "^1.0.10",
+    "dotenv": "^16.0.1",
+    "moment": "^2.29.3",
+    "parquetjs-lite": "^0.8.7"
+  }
+}
