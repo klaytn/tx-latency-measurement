@@ -113,14 +113,12 @@ async function sendTx(){
         const lastBlockNumber = await web3.eth.getBlockNumber();
         const endGetBlock = new Date().getTime()
         data.pingTime = endGetBlock - startGetBlock
-        console.log('Last block number: ', lastBlockNumber);
         
         let blockInfo = await web3.eth.getBlock(lastBlockNumber);
         data.resourceUsedOfLatestBlock = blockInfo.gasUsed;
         data.numOfTxInLatestBlock = blockInfo.transactions.length;
         
         const gasPrice = new BN(await web3.eth.getGasPrice()).mul(new BN(1))
-        console.log(gasPrice)
         const rawTx = {
             from: signerAddress,
             to:signerAddress,
@@ -152,7 +150,6 @@ async function sendTx(){
             data.endTime = end
             data.latency = end-start
             data.txFee = receipt.gasUsed * rawTx.gasPrice/1e18
-            console.log(data.txFee)
         })
         .on('error', function(err){
             prevNonce = originalPrevNonce
