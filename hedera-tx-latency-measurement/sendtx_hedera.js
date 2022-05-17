@@ -1,5 +1,5 @@
-//Hedera transaction latency measurement.  
-//Sending transaction using javascript sdk: https://github.com/hashgraph/hedera-sdk-js/blob/main/examples/transfer-tokens.js
+// Hedera transaction latency measurement.  
+// Sending transaction using javascript sdk: https://github.com/hashgraph/hedera-sdk-js/blob/main/examples/transfer-tokens.js
 // Fee Calculation: https://docs.hedera.com/guides/mainnet/fees
 const fs = require('fs');
 const AWS = require('aws-sdk');

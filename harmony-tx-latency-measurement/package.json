@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "aws-sdk": "^2.1136.0",
+    "axios": "^0.27.2",
+    "bn.js": "^5.2.0",
+    "coingecko-api": "^1.0.10",
+    "dotenv": "^16.0.1",
+    "moment": "^2.29.3",
+    "parquetjs-lite": "^0.8.7",
+    "web3": "^1.7.3"
+  }
+}
