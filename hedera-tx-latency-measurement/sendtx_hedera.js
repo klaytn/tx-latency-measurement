@@ -6,7 +6,7 @@ const AWS = require('aws-sdk');
 const parquet = require('parquetjs-lite');
 const axios = require("axios");
 const moment = require('moment');
-const { TransferTransaction, Client, AccountBalanceQuery, NetworkVersionInfoQuery } = require ("@hashgraph/sdk");
+const { TransferTransaction, Client, AccountBalanceQuery, NetworkVersionInfoQuery, Status } = require ("@hashgraph/sdk");
 const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko(); 
 require('dotenv').config();
@@ -121,6 +121,24 @@ async function sendTx(){
         // Fee for transaction: $0.0001
         const txResponse = await transferTransaction.execute(client) 
         const receipt = await txResponse.getReceipt(client);
+        var consensusStatus = receipt.status.toString();
+        if (consensusStatus == Status.Unknown.toString())
+        {
+            const receipt1 = await txResponse.getReceipt(client);
+            consensusStatus = receipt1.status.toString();
+            if (consensusStatus == Status.Unknown.toString())
+            {
+                const receipt2 = await txResponse.getReceipt(client);
+                consensusStatus = receipt2.status.toString();
+            }
+        }
+
+        if (consensusStatus != Status.Success.toString())
+        {
+            //throw error
+            throw new Error(`Consensus status in transaction receipt is ${consensusStatus}`)
+        }
+        
         const end = new Date().getTime()
         data.endTime = end
         data.latency = end-start
