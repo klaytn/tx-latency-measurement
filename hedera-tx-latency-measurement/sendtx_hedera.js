@@ -12,7 +12,7 @@ const CoinGeckoClient = new CoinGecko();
 require('dotenv').config();
 
 //Build your Hedera client: https://docs.hedera.com/guides/docs/sdks/client
-const client = Client.forTestnet(); 
+const client = Client.forMainnet();
 client.setOperator(process.env.ACCOUNT_ID, process.env.PRIVATE_KEY);
 
 async function makeParquetFile(data) {
@@ -101,7 +101,7 @@ async function sendTx(){
             .execute(client);
         
         const accountID = client.operatorAccountId.toString()
-        
+
         if(balance.hbars.toBigNumber().toNumber() < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_HBAR))
         {
             sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${accountID}|${accountID}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_HBAR} HBAR! balance=${balance.hbars.toBigNumber().toNumber()} HBAR`)
