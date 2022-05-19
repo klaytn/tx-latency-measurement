@@ -101,14 +101,14 @@ async function sendTx(){
 
         const keyring = new Keyring({type: 'sr25519'});
         const sender = keyring.addFromMnemonic(process.env.SENDER_MNEMONIC);
-        const senderAddress = sender.toJson().address; 
+        const senderAddress = sender.toJson().address;
         const accountInfo  = await api.query.system.account(senderAddress);  
         //mainnet: 10**(-10) & testnet westend: 10**(-12)
         const balance = Number(accountInfo.toJSON().data.free) * (10**(-12))
     
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_DOT))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${sender}|${sender}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_DOT} DOT! balance=${balance} DOT`)
+            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${senderAddress}|${senderAddress}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_DOT} DOT! balance=${balance} DOT`)
         }
  
         const startGetBlock = new Date().getTime()
@@ -118,20 +118,22 @@ async function sendTx(){
             data.pingTime = endGetBlock - startGetBlock;        
             unsubscribe();
 
-            const latestBlockHash = await api.rpc.chain.getBlockHash(latestBlockNumber);
-            const latestBlockInfo = await api.rpc.chain.getBlock(latestBlockHash);
-    
-            // Calculate the number of transactions and resource used in the latest block.
-            const transactions = latestBlockInfo.toJSON().block.extrinsics;
-            data.numOfTxInLatestBlock = transactions.length;
-            var weightUsed = 0
-            for await (const tx of transactions)
-            {
-                const paymentInfo = await api.rpc.payment.queryInfo(tx)
-                weightUsed += Number(paymentInfo.toJSON().weight)
-            }
-            data.resourceUsedOfLatestBlock = Math.round(weightUsed * (10**(-9)))
-            
+            const unsubscribeLatestBlockHash = await api.rpc.chain.getBlockHash(latestBlockNumber, async (latestBlockHash)=>{
+                unsubscribeLatestBlockHash();
+                // Calculate the number of transactions and resource used in the latest block.
+                const unsubscribeLatestBlockInfo = await api.rpc.chain.getBlock(latestBlockHash, async(latestBlockInfo)=>{
+                    const transactions = latestBlockInfo.toJSON().block.extrinsics;
+                    unsubscribeLatestBlockInfo();
+                    data.numOfTxInLatestBlock = transactions.length;
+                    var weightUsed = 0
+                    for await (const tx of transactions)
+                    {
+                        const paymentInfo = await api.rpc.payment.queryInfo(tx)
+                        weightUsed += Number(paymentInfo.toJSON().weight)
+                    }
+                    data.resourceUsedOfLatestBlock = Math.round(weightUsed * (10**(-9)))
+                });      
+            });
             // Create value transfer transaction.
             const transfer = api.tx.balances.transfer(senderAddress, 0);
 
@@ -141,22 +143,24 @@ async function sendTx(){
             // Send Transaction and wait until the transaction is in block.
             const start = new Date().getTime()
             data.startTime = start 
-            await transfer.send(async (result) => {
+            const unsubscribeTransactionSend = await transfer.send(async (result) => {
                 if(result.isInBlock)
                 {  
+                    unsubscribeTransactionSend();
                     const end = new Date().getTime()
                     data.endTime = end
                     data.latency = end-start
                     data.txhash = '0x' + Buffer.from(result.txHash).toString('hex')
                     
                     //Calculate tx using BlockHash and txIndex
-                    const blockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock); //parameter is BlockHash
-                    const feeDetails = await api.rpc.payment.queryFeeDetails(blockInfo.block.extrinsics[result.txIndex].toHex());
-                    const inclusionFee = feeDetails.toJSON().inclusionFee;
+                    const unsubBlockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock, async (blockInfo)=>{
+                        unsubBlockInfo();
+                        const feeDetails = await api.rpc.payment.queryFeeDetails(blockInfo.block.extrinsics[result.txIndex].toHex()); //parameter is BlockHash
+                        const inclusionFee = feeDetails.toJSON().inclusionFee;
+                        //Mainnet: (10**(-10)) since Denomination day, Testnet WestEnd: (10**(-12))
+                        data.txFee = (inclusionFee.baseFee + inclusionFee.lenFee + inclusionFee.adjustedWeightFee)*(10**(-12))
+                    });
 
-                    //Mainnet: (10**(-10)) since Denomination day, Testnet WestEnd: (10**(-12))
-                    data.txFee = (inclusionFee.baseFee + inclusionFee.lenFee + inclusionFee.adjustedWeightFee)*(10**(-12))
-            
                     //Calculate txFee in USD 
                     var DOTtoUSD;
                     await CoinGeckoClient.simple.price({
@@ -167,7 +171,8 @@ async function sendTx(){
                     })
                     data.txFeeInUSD = data.txFee * DOTtoUSD                
                     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-                    uploadToS3(data)
+                    await uploadToS3(data);
+                    api.disconnect();
                 }
             })
         });
