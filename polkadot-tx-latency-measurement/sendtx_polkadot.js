@@ -14,7 +14,7 @@ const axios = require('axios');
 const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko();
 require("dotenv").config();
-
+var api= null;
 //Construct 
 const wsProvider = new WsProvider(process.env.NETWORK_ENDPOINT)
 
@@ -97,8 +97,10 @@ async function sendTx(){
     }
     
     try{
-        const api = await ApiPromise.create({provider: wsProvider});
-
+        if (api == null)
+        {
+            api = await ApiPromise.create({provider: wsProvider});
+        }
         const keyring = new Keyring({type: 'sr25519'});
         const sender = keyring.addFromMnemonic(process.env.SENDER_MNEMONIC);
         const senderAddress = sender.toJson().address;
@@ -132,49 +134,51 @@ async function sendTx(){
                         weightUsed += Number(paymentInfo.toJSON().weight)
                     }
                     data.resourceUsedOfLatestBlock = Math.round(weightUsed * (10**(-9)))
+
+                    // Create value transfer transaction.
+                    const transfer = api.tx.balances.transfer(senderAddress, 0);
+
+                    // Sign transaction. 
+                    await transfer.signAsync(sender);
+
+                    // Send Transaction and wait until the transaction is in block.
+                    const start = new Date().getTime()
+                    data.startTime = start 
+                    const unsubscribeTransactionSend = await transfer.send(async (result) => {
+                        if(result.isInBlock)
+                        {  
+                            unsubscribeTransactionSend();
+                            const end = new Date().getTime()
+                            data.endTime = end
+                            data.latency = end-start
+                            data.txhash = '0x' + Buffer.from(result.txHash).toString('hex')
+                            
+                            //Calculate tx using BlockHash and txIndex
+                            const unsubBlockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock, async (blockInfo)=>{
+                                unsubBlockInfo();
+                                const feeDetails = await api.rpc.payment.queryFeeDetails(blockInfo.toJSON().block.extrinsics[result.txIndex]); //parameter is BlockHash
+                                const inclusionFee = feeDetails.toJSON().inclusionFee;
+                                //Mainnet: (10**(-10)) since Denomination day, Testnet WestEnd: (10**(-12))
+                                data.txFee = (inclusionFee.baseFee + inclusionFee.lenFee + inclusionFee.adjustedWeightFee)*(10**(-12))
+
+                                //Calculate txFee in USD 
+                                var DOTtoUSD;
+                                await CoinGeckoClient.simple.price({
+                                    ids: ["polkadot"],
+                                    vs_currencies: ["usd"]
+                                }).then((response)=>{
+                                    DOTtoUSD = response.data["polkadot"]["usd"]
+                                })
+                                data.txFeeInUSD = data.txFee * DOTtoUSD                
+                                console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+                                await uploadToS3(data);
+                            });
+                        }
+                    })
                 });      
             });
-            // Create value transfer transaction.
-            const transfer = api.tx.balances.transfer(senderAddress, 0);
 
-            // Sign transaction. 
-            await transfer.signAsync(sender);
 
-            // Send Transaction and wait until the transaction is in block.
-            const start = new Date().getTime()
-            data.startTime = start 
-            const unsubscribeTransactionSend = await transfer.send(async (result) => {
-                if(result.isInBlock)
-                {  
-                    unsubscribeTransactionSend();
-                    const end = new Date().getTime()
-                    data.endTime = end
-                    data.latency = end-start
-                    data.txhash = '0x' + Buffer.from(result.txHash).toString('hex')
-                    
-                    //Calculate tx using BlockHash and txIndex
-                    const unsubBlockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock, async (blockInfo)=>{
-                        unsubBlockInfo();
-                        const feeDetails = await api.rpc.payment.queryFeeDetails(blockInfo.block.extrinsics[result.txIndex].toHex()); //parameter is BlockHash
-                        const inclusionFee = feeDetails.toJSON().inclusionFee;
-                        //Mainnet: (10**(-10)) since Denomination day, Testnet WestEnd: (10**(-12))
-                        data.txFee = (inclusionFee.baseFee + inclusionFee.lenFee + inclusionFee.adjustedWeightFee)*(10**(-12))
-                    });
-
-                    //Calculate txFee in USD 
-                    var DOTtoUSD;
-                    await CoinGeckoClient.simple.price({
-                        ids: ["polkadot"],
-                        vs_currencies: ["usd"]
-                    }).then((response)=>{
-                        DOTtoUSD = response.data["polkadot"]["usd"]
-                    })
-                    data.txFeeInUSD = data.txFee * DOTtoUSD                
-                    console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-                    await uploadToS3(data);
-                    api.disconnect();
-                }
-            })
         });
     } catch(err){
         console.log("failed to execute.", err.toString())
@@ -193,7 +197,6 @@ async function main(){
     setInterval(()=>{
         sendTx()
     }, interval)
-
 }
 
 main();
