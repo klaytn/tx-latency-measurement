@@ -106,6 +106,12 @@ async function sendTx(){
             data.chainId = id
         })
         const gasPrice = await web3.eth.getGasPrice();
+        if (gasPrice * (10**(-9)) > process.env.MAX_GAS_PRICE)
+        {
+            console.log(`Gas Price ${gasPrice*(10**(-9))} Gwei is bigger than Gas Price limit ${process.env.MAX_GAS_PRICE} Gwei.`)
+            return; 
+        }
+
         const latestNonce = await web3.eth.getTransactionCount(signer.address);
         if (latestNonce == PrevNonce) 
         {
