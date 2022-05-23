@@ -140,7 +140,7 @@ async function sendTx(){
                 const start = new Date().getTime()
                 data.startTime = start 
                 const unsubscribeTransactionSend = await transfer.send(async (result) => {
-                    if(result.isFinalized)
+                    if(result.isInBlock)
                     {
                         unsubscribeTransactionSend();
                         const end = new Date().getTime()
@@ -149,7 +149,7 @@ async function sendTx(){
                         data.txhash = '0x' + Buffer.from(result.txHash).toString('hex')
                         
                         //Calculate tx using BlockHash and txIndex
-                        const unsubBlockInfo = await api.rpc.chain.getBlock(result.toHuman().status.Finalized, async (blockInfo)=>{
+                        const unsubBlockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock, async (blockInfo)=>{
                             unsubBlockInfo();
                             const feeDetails = await api.rpc.payment.queryFeeDetails(blockInfo.toJSON().block.extrinsics[result.txIndex]); //parameter is BlockHash
                             const inclusionFee = feeDetails.toJSON().inclusionFee;
@@ -183,7 +183,7 @@ async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
     api = await ApiPromise.create({provider: wsProvider});
-    sendTx()
+
     // run sendTx every SEND_TX_INTERVAL
     const interval = eval(process.env.SEND_TX_INTERVAL)
     setInterval(()=>{
