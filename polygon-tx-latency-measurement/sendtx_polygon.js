@@ -125,23 +125,26 @@ async function sendTx(){
       data.numOfTxInLatestBlock = result.transactions.length
     })
 
-    var maxPriorityFeePerGas; 
-    var baseFee; 
-    // Option 1. Calculate maxPriorityFeePerGas based on Fee History 
-    // https://web3js.readthedocs.io/en/v1.5.0/web3-eth.html#getfeehistory
-    await web3.eth.getFeeHistory(10, "latest", [50]).then((result)=>{
-      baseFee = Number(result.baseFeePerGas[3])// expected base Fee value (in wei)
-      var sum = 0
-      result.reward.forEach(element => {
-        sum += Number(element[0])
-      });
-      sum /= 10 
-      maxPriorityFeePerGas = web3.utils.toHex(Math.round(sum).toString())//in wei 
-    });
+    // Option 1. Use gasstation https://docs.polygon.technology/docs/develop/tools/polygon-gas-station/ 
+    const gasStationResult = await axios.get(process.env.GAS_STATION_URL, {
+      headers:{
+        "Content-Type": "application/json"
+      }
+    })
+    const maxPriorityFeePerGas = web3.utils.toHex(Math.round(gasStationResult.data.standard.maxPriorityFee * 1e9))
+    const maxFeePerGas = web3.utils.toHex(Math.round(gasStationResult.data.standard.maxFee * 1e9))
 
-    // Option 2. Calculate maxPriorityFeePerGas using equation: (gasPrice - baseFee)
-    // const gasPrice = await web3.eth.getGasPrice()
-    // maxPriorityFeePerGas = web3.utils.toHex((gasPrice - baseFee).toString())
+    // Option 2. Calculate maxPriorityFeePerGas based on Fee History 
+    // https://web3js.readthedocs.io/en/v1.5.0/web3-eth.html#getfeehistory
+    // await web3.eth.getFeeHistory(10, "latest", [50]).then((result)=>{
+    //   baseFee = Number(result.baseFeePerGas[3])// expected base Fee value (in wei)
+    //   var sum = 0
+    //   result.reward.forEach(element => {
+    //     sum += Number(element[0])
+    //   });
+    //   sum /= 10 
+    //   maxPriorityFeePerGas = web3.utils.toHex(Math.round(sum).toString())//in wei 
+    // });
 
     //create value transfer transaction (EIP-1559) 
     const tx = {
@@ -152,7 +155,7 @@ async function sendTx(){
       value: web3.utils.toHex(web3.utils.toWei("0", "ether")),
       gas: 21000,
       maxPriorityFeePerGas, // 2.5 Gwei is a default 
-      // default maxFeePerGas = (2 * block.baseFeePerGas) + maxPriorityFeePerGas 
+      maxFeePerGas // default maxFeePerGas = (2 * block.baseFeePerGas) + maxPriorityFeePerGas 
     }
 
     //Sign to the transaction
