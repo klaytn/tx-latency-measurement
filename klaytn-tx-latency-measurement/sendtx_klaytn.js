@@ -61,10 +61,10 @@ async function makeParquetFile(data) {
 
 function loadConfig() {
     if(process.env.NODE_ENV === undefined) {
-        console.log("using .env")
+        // console.log("using .env")
         require('dotenv').config({path:path.join(__dirname,'.env')})
     } else {
-        console.log(`using .env.${process.env.NODE_ENV}`)
+        // console.log(`using .env.${process.env.NODE_ENV}`)
         require('dotenv').config({path:path.join(__dirname,`.env.${process.env.NODE_ENV}`)})
     }
 }
@@ -161,11 +161,11 @@ async function sendTx() {
         })
         data.txFee = caver.utils.convertFromPeb(receipt.gasPrice, 'KLAY') * receipt.gasUsed
         data.txFeeInUSD = KLAYtoUSD * data.txFee
-        console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+        // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch (err) {
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
-        console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+        // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     }
     try{
         await uploadToS3(data)
