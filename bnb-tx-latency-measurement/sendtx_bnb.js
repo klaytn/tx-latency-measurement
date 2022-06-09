@@ -43,7 +43,7 @@ async function makeParquetFile(data) {
   
     await writer.appendRow(data)
   
-    writer.close()
+    await writer.close()
   
     return filename;
 }

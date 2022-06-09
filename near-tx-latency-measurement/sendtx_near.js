@@ -56,7 +56,7 @@ async function makeParquetFile(data) {
     var writer = await parquet.ParquetWriter.openFile(schema, filename);
   
     await writer.appendRow(data)
-    writer.close()
+    await writer.close()
     return filename;
 }  
 
