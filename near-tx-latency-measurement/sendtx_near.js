@@ -18,7 +18,7 @@ require('dotenv').config();
 const sender = process.env.SENDER_ACCOUNT_ID;
 const networkId = process.env.NETWORK_ID;
 const amount = nearAPI.utils.format.parseNearAmount('0.0');
-var PrevNonce = 0; 
+var PrevNonce = null;
 
 // sets up a NEAR API/RPC provider to interact with the blockchain
 const provider = new nearAPI.providers
@@ -27,8 +27,7 @@ const provider = new nearAPI.providers
   });
 
 // creates keyPair used to sign transaction
-const privateKey = process.env.SENDER_PRIVATE_KEY;
-const keyPair = nearAPI.utils.key_pair.KeyPairEd25519.fromString(privateKey);
+var keyPair;
 
 async function makeParquetFile(data) {
     var schema = new parquet.ParquetSchema({
@@ -74,6 +73,10 @@ async function sendSlackMsg(msg) {
 }
   
 async function uploadToS3(data){
+    if(process.env.S3_BUCKET === "") {
+        throw "undefined bucket name"
+    }
+
     const s3 = new AWS.S3();
     const filename = await makeParquetFile(data)
     const param = {
@@ -248,7 +251,8 @@ async function sendTx() {
     try{
         await uploadToS3(data)
     } catch(err){
-        console.log('failed to s3.upload', err.toString())
+        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(JSON.stringify(data))
     }
 }
 
@@ -256,6 +260,15 @@ async function main (){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
 
+    if (process.env.SENDER_PRIVATE_KEY === "") {
+        console.log(`Private key is not defined.`)
+        console.log(`Create a new Account using testnet wallet: https://wallet.testnet.near.org/`)
+        console.log(`Then update SENDER_ACCOUNT_ID and SENDER_PRIVATE_KEY in .env file.`)
+        return
+    }
+
+    keyPair = nearAPI.utils.key_pair.KeyPairEd25519.fromString(process.env.SENDER_PRIVATE_KEY);
+    
     // run sendTx every SEND_TX_INTERVAL(sec).
     const interval = eval(process.env.SEND_TX_INTERVAL)
         setInterval(()=>{
