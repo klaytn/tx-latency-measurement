@@ -5,16 +5,21 @@
 // 3. Listen to New blocks: https://polkadot.js.org/docs/api/examples/promise/listen-to-blocks
 
 const { ApiPromise, WsProvider } = require("@polkadot/api");
-const { Keyring} = require('@polkadot/keyring');
+const { Keyring } = require('@polkadot/keyring');
+const {
+    mnemonicGenerate,
+} = require('@polkadot/util-crypto');
 const fs = require('fs');
 const AWS = require('aws-sdk');
 const parquet = require('parquetjs-lite');
 const moment = require('moment');
 const axios = require('axios');
 const CoinGecko = require('coingecko-api');
+
 const CoinGeckoClient = new CoinGecko();
 require("dotenv").config();
 var api= null;
+
 //Construct 
 const wsProvider = new WsProvider(process.env.NETWORK_ENDPOINT)
 
@@ -65,6 +70,10 @@ async function sendSlackMsg(msg) {
 
 async function uploadToS3(data){
     try{
+        if(process.env.S3_BUCKET === "") {
+            throw "undefined bucket name"
+        }
+
         const s3 = new AWS.S3();
         const filename = await makeParquetFile(data)
         const param = {
@@ -76,7 +85,8 @@ async function uploadToS3(data){
         await s3.upload(param).promise()
         fs.unlinkSync(filename)
     } catch(err){
-        console.log('failed to s3.upload', err.toString())
+        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(JSON.stringify(data))
     }
 }
 
@@ -183,6 +193,17 @@ async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
     api = await ApiPromise.create({provider: wsProvider});
+
+    if (process.env.SENDER_MNEMONIC === ""){
+        const newMnemonic = mnemonicGenerate();
+        const keyring = new Keyring({type: 'sr25519'});
+        const address = keyring.addFromMnemonic(newMnemonic).toJson().address;
+        console.log(`MNEMONIC is undefined. Use this new MNEMONIC: ${newMnemonic}`)
+        console.log(`Get test DOT from the faucet: https://matrix.to/#/!cJFtAIkwxuofiSYkPN:matrix.org?via=matrix.org&via=matrix.parity.io&via=web3.foundation`)
+        console.log(`Your Polkadot address = ${address}`)
+        console.log(`To exit, press Ctrl+C.`)
+        return;
+    }
 
     // run sendTx every SEND_TX_INTERVAL
     const interval = eval(process.env.SEND_TX_INTERVAL)
