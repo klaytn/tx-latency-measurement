@@ -11,7 +11,7 @@ const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko();
 
 require('dotenv').config();
-const keypair = web3.Keypair.fromSecretKey(Base58.decode(process.env.SIGNER_PRIVATE_KEY)); //Base58 encoded private key (64 byte)-> generate keypair 
+var keypair = ""
 const connection = new web3.Connection(web3.clusterApiUrl(process.env.CLUSTER_NAME), 'confirmed'); //To use mainnet, use 'mainnet-beta'
 
 async function makeParquetFile(data) {
@@ -47,6 +47,9 @@ async function makeParquetFile(data) {
 }
 
 async function uploadToS3(data){
+  if(process.env.S3_BUCKET === "") {
+    throw "undefind bucket name."
+  }
   const s3 = new AWS.S3();
   const filename = await makeParquetFile(data)
   const param = {
@@ -166,13 +169,24 @@ async function sendZeroSol(){
   try{
     await uploadToS3(data)
   } catch(err){
-    console.log('failed to s3.upload', err.toString())
+    console.log('failed to s3.upload! Printing instead!', err.toString())
+    console.log(JSON.stringify(data))
   }
 }
 
 async function main (){
   const start = new Date().getTime()
   console.log(`starting tx latency measurement... start time = ${start}`)
+  var privKey = process.env.SIGNER_PRIVATE_KEY
+  if(privKey === "") {
+    let account = web3.Keypair.generate();
+    privKey = Base58.encode(account.secretKey)
+    console.log(`private key is not defined. Using this new private key(${privKey}).`)
+    console.log(`Get test sol from the faucet: https://solfaucet.com/)`)
+    console.log(`Your Solana address = ${account.publicKey.toBase58()}`)
+    return
+  }
+  keypair = web3.Keypair.fromSecretKey(Base58.decode(privKey)); //Base58 encoded private key (64 byte)-> generate keypair
 
   // run sendTx every SEND_TX_INTERVAL(sec).
   const interval = eval(process.env.SEND_TX_INTERVAL)
