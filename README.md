@@ -6,7 +6,7 @@ Using this repo, you can measure transaction latency on differenct blockchain pl
 ### 2) Prerequisite
 This project uses NodeJS v16.14.2.
 
-### 2) Getting Started
+### 3) Getting Started
 1. Open terminal 
 2. Clone the repo by running `https://github.com/klaytn/tx-latency-measurement.git`
 3. `cd tx-latency-measurement/{BlockchainName}-tx-latency-measurement` by selecting which blockchain you want to measure.  
@@ -14,7 +14,7 @@ This project uses NodeJS v16.14.2.
 6. Run `npm install` to install node packages.
 7. Run `node sendtx_{BlockchainName}.js`. 
 
-### 3) List of Blockchain Platforms 
+### 4) List of Blockchain Platforms 
 (unchecked: to be updated)
 - [x] Klaytn
 - [x] Polygon PoS
