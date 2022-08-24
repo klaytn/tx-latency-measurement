@@ -3,19 +3,19 @@
 const Web3 = require('web3')
 const fs = require('fs')
 const AWS = require('aws-sdk')
-var parquet = require('parquetjs-lite')
+const parquet = require('parquetjs-lite')
 const moment = require('moment');
 const axios = require('axios');
 const CoinGecko = require('coingecko-api');
-
 require("dotenv").config();
 
 let rpc = process.env.PUBLIC_RPC_URL;
 const provider = new Web3.providers.HttpProvider(rpc);
 const web3 = new Web3(provider);
-const CoinGeckoClient = new CoinGecko(); 
+const CoinGeckoClient = new CoinGecko();
 
-var PrevNonce = 0; 
+const privateKey = process.env.SIGNER_PRIVATE_KEY;
+var PrevNonce = null; 
 
 async function makeParquetFile(data) {
   var schema = new parquet.ParquetSchema({
@@ -63,14 +63,20 @@ async function sendSlackMsg(msg) {
 }
 
 async function uploadToS3(data){
+  if(process.env.S3_BUCKET === "") {
+    throw "undefined bucket name"
+  }
+
   const s3 = new AWS.S3();
   const filename = await makeParquetFile(data)
+
   const param = {
     'Bucket':process.env.S3_BUCKET,
     'Key':filename,
     'Body':fs.createReadStream(filename),
     'ContentType':'application/octet-stream'
   }
+
   await s3.upload(param).promise()
 
   fs.unlinkSync(filename) 
@@ -93,10 +99,10 @@ async function sendTx(){
     pingTime:0 
   }
 
-  try{
+  try{    
     // Add your private key 
     const signer = web3.eth.accounts.privateKeyToAccount(
-        process.env.SIGNER_PRIVATE_KEY
+      privateKey
     );
     const balance = await web3.eth.getBalance(signer.address); //in wei  
 
@@ -157,7 +163,7 @@ async function sendTx(){
 
     //Sign to the transaction
     var RLPEncodedTx;
-    await web3.eth.accounts.signTransaction(tx, process.env.SIGNER_PRIVATE_KEY)
+    await web3.eth.accounts.signTransaction(tx, privateKey)
     .then((result) => {
       RLPEncodedTx = result.rawTransaction // RLP encoded transaction & already HEX value
       data.txhash = result.transactionHash // the transaction hash of the RLP encoded transaction.
@@ -207,13 +213,22 @@ async function sendTx(){
   try{
     await uploadToS3(data)
   } catch(err){
-    console.log('failed to s3.upload', err.toString())
+    console.log('failed to s3.upload! Printing instead!', err.toString())
+    console.log(JSON.stringify(data))
   }
 }
 
 async function main(){
   const start = new Date().getTime()
   console.log(`starting tx latency measurement... start time = ${start}`)
+  
+  if(privateKey === "") {
+    const account = web3.eth.accounts.create(web3.utils.randomHex(32));
+    console.log(`private key is not defined. Using this new private key(${account.privateKey}).`)
+    console.log(`Get test MATIC from the faucet: https://faucet.polygon.technology/`)
+    console.log(`Your Polygon address = ${account.address}`)
+    return
+  }
 
   // run sendTx every SEND_TX_INTERVAL
   const interval = eval(process.env.SEND_TX_INTERVAL)
