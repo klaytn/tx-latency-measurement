@@ -26,7 +26,7 @@ npm install
 ```shell
 cp .env.template .env
 ```
-4. Update .env and make sure PRIVATE_KEY and S3_BUCKET is empty as below: 
+4. Update `.env` and make sure PRIVATE_KEY and S3_BUCKET is empty as below: 
 ```
 PRIVATE_KEY=
 CAVER_URL=https://public-node-api.klaytnapi.com/v1/baobab
