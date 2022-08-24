@@ -11,8 +11,11 @@ const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko(); 
 
 async function uploadToS3(data) {
-    const s3 = new AWS.S3();
+    if(process.env.S3_BUCKET === "") {
+        throw "undefined bucket name"
+    }
 
+    const s3 = new AWS.S3();
     const filename = await makeParquetFile(data)
 
     const param = {
@@ -170,13 +173,23 @@ async function sendTx() {
     try{
         await uploadToS3(data)
     } catch(err){
-        console.log('failed to s3.upload', err.toString())
+        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(JSON.stringify(data))
     }
 }
 
 async function main() {
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
+
+    if(process.env.PRIVATE_KEY === "") {
+        const caver = new Caver(process.env.CAVER_URL)
+        const keyring = caver.wallet.keyring.generate()
+        console.log(`private key is not defined. Using this new private key(${keyring.key.privateKey}).`)
+        console.log(`Get test KLAY from the faucet: https://baobab.wallet.klaytn.foundation/faucet`)
+        console.log(`Your Klaytn address = ${keyring.address}`)
+        return
+    }
 
     // run sendTx every 1 min.
     const interval = eval(process.env.SEND_TX_INTERVAL)
