@@ -181,7 +181,7 @@ async function main (){
   if(privKey === "") {
     let account = web3.Keypair.generate();
     privKey = Base58.encode(account.secretKey)
-    console.log(`private key is not defined. Using this new private key(${privKey}).`)
+    console.log(`Private key is not defined. Use this new private key(${privKey}).`)
     console.log(`Get test sol from the faucet: https://solfaucet.com/)`)
     console.log(`Your Solana address = ${account.publicKey.toBase58()}`)
     return

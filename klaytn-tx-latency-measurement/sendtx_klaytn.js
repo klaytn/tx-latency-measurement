@@ -185,7 +185,7 @@ async function main() {
     if(process.env.PRIVATE_KEY === "") {
         const caver = new Caver(process.env.CAVER_URL)
         const keyring = caver.wallet.keyring.generate()
-        console.log(`private key is not defined. Using this new private key(${keyring.key.privateKey}).`)
+        console.log(`Private key is not defined. Use this new private key(${keyring.key.privateKey}).`)
         console.log(`Get test KLAY from the faucet: https://baobab.wallet.klaytn.foundation/faucet`)
         console.log(`Your Klaytn address = ${keyring.address}`)
         return

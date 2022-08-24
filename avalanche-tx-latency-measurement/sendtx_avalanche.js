@@ -211,7 +211,7 @@ async function main(){
 
     if(process.env.SIGNER_PRIVATE_KEY === "") {
         const wallet = ethers.Wallet.createRandom()
-        console.log(`private key is not defined. Using this new private key(${wallet.privateKey}).`)
+        console.log(`Private key is not defined. Use this new private key(${wallet.privateKey}).`)
         console.log(`Get test AVAX from the faucet: https://faucet.avax.network/`)
         console.log(`Your Avalanche address = ${wallet.address}`)
         return
