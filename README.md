@@ -3,7 +3,10 @@
 ### 1) Introduction 
 Using this repo, you can measure transaction latency on differenct blockchain platforms(ex: Solana mainnet-beta, Avalanche C-chain, Polygon PoS, and Klaytn). Transaction latency is measured by sending a simple value transfer transaction through public RPC url provided by each chain. Each subdirectory is for each different blockchain platform. Codes for other chains will be updated.
 
-### 2) Getting Started 
+### 2) Prerequisite
+This project uses NodeJS v16.14.2.
+
+### 2) Getting Started
 1. Open terminal 
 2. Clone the repo by running `https://github.com/klaytn/tx-latency-measurement.git`
 3. `cd tx-latency-measurement/{BlockchainName}-tx-latency-measurement` by selecting which blockchain you want to measure.  

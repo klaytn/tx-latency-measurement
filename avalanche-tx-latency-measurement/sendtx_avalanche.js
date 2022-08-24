@@ -3,14 +3,15 @@
 const ethers = require('ethers');
 const Avalanche = require('avalanche').Avalanche;
 const AWS = require('aws-sdk');
-var parquet = require('parquetjs-lite');
+const parquet = require('parquetjs-lite');
 const moment = require('moment');
 const fs = require('fs');
 const axios = require('axios');
 const CoinGecko = require('coingecko-api');
 require('dotenv').config();
 
-const privateKey = process.env.SIGNER_PRIVATE_KEY;
+var address = ""; 
+var wallet;
 
 const nodeURL = process.env.PUBLIC_RPC_URL;
 const HTTPSProvider = new ethers.providers.JsonRpcProvider(nodeURL);
@@ -19,11 +20,8 @@ const chainId = process.env.CHAIN_ID;
 const avalanche = new Avalanche(process.env.AVALANCHE_HOST, undefined, 'https', chainId);
 const cchain = avalanche.CChain();
 
-const wallet = new ethers.Wallet(privateKey);
-const address = wallet.address;
-
 const CoinGeckoClient = new CoinGecko(); 
-var PrevNonce = 0; 
+var PrevNonce = null; 
 
 async function makeParquetFile(data) {
     var schema = new parquet.ParquetSchema({
@@ -71,6 +69,9 @@ async function sendSlackMsg(msg) {
 }
 
 async function uploadToS3(data){
+    if(process.env.S3_BUCKET === "") {
+        throw ("undefined bucket name");
+    }
     const s3 = new AWS.S3();
     const filename = await makeParquetFile(data)
     const param = {
@@ -130,8 +131,8 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         const latestNonce = await HTTPSProvider.getTransactionCount(address);
         if (latestNonce == PrevNonce) 
         {
-        //   console.log(`Nonce ${latestNonce} = ${PrevNonce}`)
-          return;
+            // console.log(`Nonce ${latestNonce} = ${PrevNonce}`)
+            return;
         }
 
         // Measure latency of getBlockNumber
@@ -199,13 +200,26 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
     try{
         await uploadToS3(data)
     } catch(err){
-        console.log('failed to s3.upload', err.toString())
+        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(JSON.stringify(data))
     }
 };
 
 async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
+
+    if(process.env.SIGNER_PRIVATE_KEY === "") {
+        const wallet = ethers.Wallet.createRandom()
+        console.log(`private key is not defined. Using this new private key(${wallet.privateKey}).`)
+        console.log(`Get test AVAX from the faucet: https://faucet.avax.network/`)
+        console.log(`Your Avalanche address = ${wallet.address}`)
+        return
+    }
+
+    const privateKey = process.env.SIGNER_PRIVATE_KEY;
+    wallet = new ethers.Wallet(privateKey);
+    address = wallet.address;
 
     // run sendTx every SEND_TX_INTERVAL(sec).
     const interval = eval(process.env.SEND_TX_INTERVAL)
