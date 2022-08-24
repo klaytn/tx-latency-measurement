@@ -4,7 +4,7 @@
 const Web3 = require('web3');
 const fs = require('fs')
 const AWS = require('aws-sdk')
-var parquet = require('parquetjs-lite')
+const parquet = require('parquetjs-lite')
 const moment = require('moment');
 const axios = require('axios');
 const CoinGecko = require('coingecko-api');
@@ -14,7 +14,7 @@ require('dotenv').config();
 
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.PUBLIC_RPC_URL_WEB3));
 const privateKey = process.env.SIGNER_PRIVATE_KEY;
-var PrevNonce = 0; 
+var PrevNonce = null;
 
 async function makeParquetFile(data) {
     var schema = new parquet.ParquetSchema({
@@ -62,6 +62,10 @@ async function sendSlackMsg(msg) {
 }
   
 async function uploadToS3(data){
+    if(process.env.S3_BUCKET === "") {
+        throw "undefined bucket name"
+    }
+
     const s3 = new AWS.S3();
     const filename = await makeParquetFile(data)
     const param = {
@@ -184,7 +188,8 @@ async function sendTx(){
     try{
         await uploadToS3(data)
     } catch(err){
-        console.log('failed to s3.upload', err.toString())
+        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(JSON.stringify(data))
     }
 
 }
@@ -192,6 +197,14 @@ async function sendTx(){
 async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
+
+    if(privateKey === "") {
+        const account = web3.eth.accounts.create(web3.utils.randomHex(32));
+        console.log(`Private key is not defined. Use this new private key(${account.privateKey}).`)
+        console.log(`Get test FTM from the faucet: https://faucet.fantom.network/`)
+        console.log(`Your Fantom address = ${account.address}`)
+        return
+    }
 
     // run sendTx every SEND_TX_INTERVAL
     const interval = eval(process.env.SEND_TX_INTERVAL)
