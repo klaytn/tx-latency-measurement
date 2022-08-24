@@ -11,12 +11,11 @@ const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko(); 
 
 async function uploadToS3(data) {
-    const s3 = new AWS.S3();
-
     if(process.env.S3_BUCKET === "") {
         throw "undefined bucket name"
     }
 
+    const s3 = new AWS.S3();
     const filename = await makeParquetFile(data)
 
     const param = {
