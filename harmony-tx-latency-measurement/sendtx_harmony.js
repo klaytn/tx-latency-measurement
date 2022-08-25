@@ -12,10 +12,9 @@ const CoinGecko = require('coingecko-api');
 const CoinGeckoClient = new CoinGecko(); 
 
 require('dotenv').config();
-const web3 = new Web3(process.env.PUBLIC_RPC_URL)
-const signer = web3.eth.accounts.privateKeyToAccount(process.env.HMY_PRIVATE_KEY);
-const signerAddress = signer.address
-var prevNonce = 0
+const web3 = new Web3(process.env.PUBLIC_RPC_URL);
+const privateKey = process.env.HMY_PRIVATE_KEY;
+var prevNonce = null;
 
 async function makeParquetFile(data) {
     var schema = new parquet.ParquetSchema({
@@ -63,6 +62,10 @@ async function sendSlackMsg(msg) {
 }
   
 async function uploadToS3(data){
+    if(process.env.S3_BUCKET === "") {
+        throw "undefined bucket name"
+    }
+
     const s3 = new AWS.S3();
     const filename = await makeParquetFile(data)
     const param = {
@@ -93,6 +96,9 @@ async function sendTx(){
     }
 
     try{
+        const signer = web3.eth.accounts.privateKeyToAccount(privateKey);
+        const signerAddress = signer.address;
+
         const balance = await web3.eth.getBalance(signerAddress);
         if(balance/1e18 < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_ONE))
         {
@@ -173,13 +179,22 @@ async function sendTx(){
     try{
         await uploadToS3(data)
     } catch(err){
-        console.log('failed to s3.upload', err.toString())
+        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(JSON.stringify(data))
     }
 }
 
 async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
+
+    if(privateKey === "") {
+        const account = web3.eth.accounts.create(web3.utils.randomHex(32));
+        console.log(`Private key is not defined. Use this new private key(${account.privateKey}).`)
+        console.log(`Get test ONE from the faucet: http://dev.faucet.easynode.one/`)
+        console.log(`Your Harmony address = ${account.address}`)
+        return
+    }
 
     // run sendTx every SEND_TX_INTERVAL
     const interval = eval(process.env.SEND_TX_INTERVAL)
