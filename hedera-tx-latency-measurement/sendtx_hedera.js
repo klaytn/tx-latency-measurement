@@ -12,8 +12,7 @@ const CoinGeckoClient = new CoinGecko();
 require('dotenv').config();
 
 //Build your Hedera client: https://docs.hedera.com/guides/docs/sdks/client
-const client = Client.forMainnet();
-client.setOperator(process.env.ACCOUNT_ID, process.env.PRIVATE_KEY);
+const client = process.env.NETWORK === "mainnet" ? Client.forMainnet() : Client.forTestnet(); 
 
 async function makeParquetFile(data) {
     var schema = new parquet.ParquetSchema({
@@ -61,6 +60,10 @@ async function sendSlackMsg(msg) {
 }
   
 async function uploadToS3(data){
+    if(process.env.S3_BUCKET === "") {
+        throw "undefined bucket name"
+    }
+
     const s3 = new AWS.S3();
     const filename = await makeParquetFile(data)
     const param = {
@@ -165,13 +168,23 @@ async function sendTx(){
     try{
         await uploadToS3(data)
     } catch(err){
-        console.log('failed to s3.upload', err.toString())
+        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(JSON.stringify(data))        
     }
 }
 
 async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
+
+    if (process.env.PRIVATE_KEY === ""){
+        console.log(`Private key is not defined.`)
+        console.log(`Create a new Account on this website: https://portal.hedera.com/register`)
+        console.log(`Then update ACCOUNT_ID and PRIVATE_KEY in .env file.`)
+        return;
+    }
+
+    client.setOperator(process.env.ACCOUNT_ID, process.env.PRIVATE_KEY);
 
     // run sendTx every SEND_TX_INTERVAL
     const interval = eval(process.env.SEND_TX_INTERVAL)
