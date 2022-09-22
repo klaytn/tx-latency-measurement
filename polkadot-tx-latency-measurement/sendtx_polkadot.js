@@ -1,4 +1,4 @@
-// Polkadot transaction latency measurement. 
+// Polkadot transaction latency measurement.
 // Reference of Sending Transaction using Javascript:
 // 1. Transfer Event: https://polkadot.js.org/docs/api/examples/promise/transfer-events
 // 2. Transfer error handling: https://polkadot.js.org/docs/extension/cookbook/
@@ -20,7 +20,7 @@ const CoinGeckoClient = new CoinGecko();
 require("dotenv").config();
 var api= null;
 
-//Construct 
+//Construct
 const wsProvider = new WsProvider(process.env.NETWORK_ENDPOINT)
 
 async function makeParquetFile(data) {
@@ -38,23 +38,23 @@ async function makeParquetFile(data) {
         numOfTxInLatestBlock:{type:'INT64'},
         pingTime:{type:'INT64'}
     })
-  
+
     var d = new Date()
     //20220101_032921
     var datestring = moment().format('YYYYMMDD_HHmmss')
-  
+
     var filename = `${datestring}_${data.chainId}.parquet`
-  
+
     // create new ParquetWriter that writes to 'filename'
     var writer = await parquet.ParquetWriter.openFile(schema, filename);
-  
+
     await writer.appendRow(data)
-  
+
     await writer.close()
-  
+
     return filename;
 }
-  
+
 async function sendSlackMsg(msg) {
     axios.post(process.env.SLACK_API_URL, {
         'channel':process.env.SLACK_CHANNEL,
@@ -100,26 +100,26 @@ async function sendTx(){
         latency:0,
         error:'',
         txFee: 0.0,
-        txFeeInUSD: 0.0, 
+        txFeeInUSD: 0.0,
         resourceUsedOfLatestBlock: 0,
         numOfTxInLatestBlock: 0,
-        pingTime:0 
+        pingTime:0
     }
-    
+
     try{
         const keyring = new Keyring({type: 'sr25519'});
         const sender = keyring.addFromMnemonic(process.env.SENDER_MNEMONIC);
         const senderAddress = sender.toJson().address;
-        const accountInfo  = await api.query.system.account(senderAddress);  
+        const accountInfo  = await api.query.system.account(senderAddress);
         //Mainnet: (10**(-10)) since Denomination day, Testnet WestEnd: (10**(-12))
-        const decimal = process.env.NETWORK_ENDPOINT.includes('westend') ? (10**(-12)): (10**(-10)); 
+        const decimal = process.env.NETWORK_ENDPOINT.includes('westend') ? (10**(-12)): (10**(-10));
         const balance = Number(accountInfo.toJSON().data.free) * decimal
 
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_DOT))
         {
             sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${senderAddress}|${senderAddress}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_DOT} DOT! balance=${balance} DOT`)
         }
- 
+
         const startGetBlock = new Date().getTime()
         const unsubscribe = await api.rpc.chain.getFinalizedHead(async (header)=>{
             const endGetBlock = new Date().getTime();
@@ -135,7 +135,7 @@ async function sendTx(){
                 var weightUsed = 0
                 for await (const tx of transactions)
                 {
-                    const paymentInfo = await api.rpc.payment.queryInfo(tx)
+                    const paymentInfo = await api.call.transactionPaymentApi.queryInfo(tx, 1)
                     weightUsed += Number(paymentInfo.toJSON().weight)
                 }
                 data.resourceUsedOfLatestBlock = Math.round(weightUsed * (10**(-9)))
@@ -143,12 +143,12 @@ async function sendTx(){
                 // Create value transfer transaction.
                 const transfer = api.tx.balances.transfer(senderAddress, 0);
 
-                // Sign transaction. 
+                // Sign transaction.
                 await transfer.signAsync(sender);
 
                 // Send Transaction and wait until the transaction is in block.
                 const start = new Date().getTime()
-                data.startTime = start 
+                data.startTime = start
                 const unsubscribeTransactionSend = await transfer.send(async (result) => {
                     if(result.isInBlock)
                     {
@@ -157,7 +157,7 @@ async function sendTx(){
                         data.endTime = end
                         data.latency = end-start
                         data.txhash = '0x' + Buffer.from(result.txHash).toString('hex')
-                        
+
                         //Calculate tx using BlockHash and txIndex
                         const unsubBlockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock, async (blockInfo)=>{
                             unsubBlockInfo();
@@ -165,7 +165,7 @@ async function sendTx(){
                             const inclusionFee = feeDetails.toJSON().inclusionFee;
                             data.txFee = (inclusionFee.baseFee + inclusionFee.lenFee + inclusionFee.adjustedWeightFee)*decimal
 
-                            //Calculate txFee in USD 
+                            //Calculate txFee in USD
                             var DOTtoUSD;
                             await CoinGeckoClient.simple.price({
                                 ids: ["polkadot"],
@@ -173,8 +173,8 @@ async function sendTx(){
                             }).then((response)=>{
                                 DOTtoUSD = response.data["polkadot"]["usd"]
                             })
-                            data.txFeeInUSD = data.txFee * DOTtoUSD                
-                            // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+                            data.txFeeInUSD = data.txFee * DOTtoUSD
+                            console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
                             await uploadToS3(data);
                         });
                     }
@@ -184,7 +184,7 @@ async function sendTx(){
     } catch(err){
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
-        // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+        console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
         uploadToS3(data)
     }
 }
