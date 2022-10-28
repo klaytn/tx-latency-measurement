@@ -8,7 +8,8 @@ const moment = require('moment');
 const axios = require('axios');
 const CoinGecko = require('coingecko-api');
 const fs = require('fs');
-const CoinGeckoClient = new CoinGecko(); 
+const CoinGeckoClient = new CoinGecko();
+const {Storage} = require('@google-cloud/storage');
  
 //this is required if using a local .env file for private key
 require('dotenv').config();
@@ -88,7 +89,45 @@ async function uploadToS3(data){
     await s3.upload(param).promise()
 
     fs.unlinkSync(filename) 
-}  
+}
+
+async function uploadToGCS(data) {
+    if(process.env.GCP_PROJECT_ID === "" || process.env.GCP_KEY_FILE_PATH === "" || process.env.GCP_BUCKET === "") {
+        throw "undefined parameters"
+    }
+
+    const storage = new Storage({
+            projectId: process.env.GCP_PROJECT_ID,
+            keyFilename: process.env.GCP_KEY_FILE_PATH
+    });
+
+    const filename = await makeParquetFile(data)
+    const destFileName = `tx-latency-measurement/near/${filename}`;
+
+    async function uploadFile() {
+        const options = {
+          destination: destFileName,
+    };
+
+    await storage.bucket(process.env.GCP_BUCKET).upload(filename, options);
+    console.log(`${filename} uploaded to ${process.env.GCP_BUCKET}`);
+  }
+
+    await uploadFile().catch(console.error);
+    fs.unlinkSync(filename)
+}
+
+async function uploadChoice(data) {
+    if (process.env.UPLOAD_METHOD === "AWS") {
+        await uploadToS3(data)
+    }
+    else if  (process.env.UPLOAD_METHOD === "GCP") {
+        await uploadToGCS(data)
+    }
+    else {
+        throw "Improper upload method"
+    }
+}
 
 async function sendTx() {
     var data = {
@@ -249,9 +288,9 @@ async function sendTx() {
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     }
     try{
-        await uploadToS3(data)
+        await uploadChoice(data)
     } catch(err){
-        console.log('failed to s3.upload! Printing instead!', err.toString())
+        console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
 }

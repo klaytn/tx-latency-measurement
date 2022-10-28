@@ -15,8 +15,8 @@ const parquet = require('parquetjs-lite');
 const moment = require('moment');
 const axios = require('axios');
 const CoinGecko = require('coingecko-api');
-
 const CoinGeckoClient = new CoinGecko();
+const {Storage} = require('@google-cloud/storage');
 require("dotenv").config();
 var api= null;
 
@@ -87,6 +87,45 @@ async function uploadToS3(data){
     } catch(err){
         console.log('failed to s3.upload! Printing instead!', err.toString())
         console.log(JSON.stringify(data))
+    }
+}
+
+
+async function uploadToGCS(data) {
+    if(process.env.GCP_PROJECT_ID === "" || process.env.GCP_KEY_FILE_PATH === "" || process.env.GCP_BUCKET === "") {
+        throw "undefined parameters"
+    }
+
+    const storage = new Storage({
+            projectId: process.env.GCP_PROJECT_ID,
+            keyFilename: process.env.GCP_KEY_FILE_PATH
+    });
+
+    const filename = await makeParquetFile(data)
+    const destFileName = `tx-latency-measurement/polkadot/${filename}`;
+
+    async function uploadFile() {
+        const options = {
+          destination: destFileName,
+    };
+
+    await storage.bucket(process.env.GCP_BUCKET).upload(filename, options);
+    console.log(`${filename} uploaded to ${process.env.GCP_BUCKET}`);
+  }
+
+    await uploadFile().catch(console.error);
+    fs.unlinkSync(filename)
+}
+
+async function uploadChoice(data) {
+    if (process.env.UPLOAD_METHOD === "AWS") {
+        await uploadToS3(data)
+    }
+    else if  (process.env.UPLOAD_METHOD === "GCP") {
+        await uploadToGCS(data)
+    }
+    else {
+        throw "Improper upload method"
     }
 }
 
@@ -175,7 +214,7 @@ async function sendTx(){
                             })
                             data.txFeeInUSD = data.txFee * DOTtoUSD
                             console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-                            await uploadToS3(data);
+                            await uploadChoice(data);
                         });
                     }
                 })
@@ -185,7 +224,7 @@ async function sendTx(){
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-        uploadToS3(data)
+        uploadChoice(data)
     }
 }
 

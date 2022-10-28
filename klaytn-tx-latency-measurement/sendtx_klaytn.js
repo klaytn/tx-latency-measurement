@@ -67,7 +67,6 @@ async function uploadChoice(data) {
     else {
         throw "Improper upload method"
     }
-
 }
 
 async function makeParquetFile(data) {

@@ -13,7 +13,8 @@ const parquet = require('parquetjs-lite');
 const moment = require('moment');
 const axios = require("axios");
 const CoinGecko = require('coingecko-api');
-const CoinGeckoClient = new CoinGecko(); 
+const CoinGeckoClient = new CoinGecko();
+const {Storage} = require('@google-cloud/storage');
 require('dotenv').config();
 
 const networkProvider = new ApiNetworkProvider(process.env.PUBLIC_API_URL, {timeout : 5000});
@@ -80,6 +81,44 @@ async function uploadToS3(data){
     await s3.upload(param).promise()
   
     fs.unlinkSync(filename) 
+}
+
+async function uploadToGCS(data) {
+    if(process.env.GCP_PROJECT_ID === "" || process.env.GCP_KEY_FILE_PATH === "" || process.env.GCP_BUCKET === "") {
+        throw "undefined parameters"
+    }
+
+    const storage = new Storage({
+            projectId: process.env.GCP_PROJECT_ID,
+            keyFilename: process.env.GCP_KEY_FILE_PATH
+    });
+
+    const filename = await makeParquetFile(data)
+    const destFileName = `tx-latency-measurement/elrond/${filename}`;
+
+    async function uploadFile() {
+        const options = {
+          destination: destFileName,
+    };
+
+    await storage.bucket(process.env.GCP_BUCKET).upload(filename, options);
+    console.log(`${filename} uploaded to ${process.env.GCP_BUCKET}`);
+  }
+
+    await uploadFile().catch(console.error);
+    fs.unlinkSync(filename)
+}
+
+async function uploadChoice(data) {
+    if (process.env.UPLOAD_METHOD === "AWS") {
+        await uploadToS3(data)
+    }
+    else if  (process.env.UPLOAD_METHOD === "GCP") {
+        await uploadToGCS(data)
+    }
+    else {
+        throw "Improper upload method"
+    }
 }
 
 async function sendTx(){
