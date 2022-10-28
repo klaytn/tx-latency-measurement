@@ -213,7 +213,7 @@ async function sendTx() {
     try{
         await uploadChoice(data)
     } catch(err){
-        console.log('failed to gcs.upload! Printing instead!', err.toString())
+        console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
 }
