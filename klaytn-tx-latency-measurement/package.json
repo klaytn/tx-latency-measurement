@@ -15,6 +15,7 @@
     "coingecko-api": "^1.0.10",
     "dotenv": "^16.0.0",
     "moment": "^2.29.1",
-    "parquetjs-lite": "^0.8.7"
+    "parquetjs-lite": "^0.8.7",
+    "@google-cloud/storage": "^6.0.0"
   }
 }
