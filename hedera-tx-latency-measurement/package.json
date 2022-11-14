@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@hashgraph/sdk": "^2.13.1",
+    "@hashgraph/sdk": "^2.18.5",
     "aws-sdk": "^2.1136.0",
     "axios": "^0.27.2",
     "coingecko-api": "^1.0.10",
