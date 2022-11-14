@@ -12,7 +12,7 @@ This project uses NodeJS v16.14.2.
 3. `cd tx-latency-measurement/{BlockchainName}-tx-latency-measurement` by selecting which blockchain you want to measure.  
 4. Run `npm install` to install node packages.
 5. Copy and paste `.env.template` file. Then rename it to `.env` and update variables with your Private key, url of blockchain explorer, and public rpc url. 
-You should also decide whethere to upload to GCS/S3, and provide appropriate credentials.
+You should also decide whether to upload to GCS/S3, and provide appropriate credentials.
 6. Run `node sendtx_{BlockchainName}.js`. 
 
 ### 4) Simple Test with Testnet (Klaytn) 
