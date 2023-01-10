@@ -1,5 +1,5 @@
-// Solana transaction latency measurement. 
-// Reference of Sending Transaction using SolanaJS: https://docs.solana.com/developing/clients/javascript-api 
+// Solana transaction latency measurement.
+// Reference of Sending Transaction using SolanaJS: https://docs.solana.com/developing/clients/javascript-api
 const web3 = require("@solana/web3.js");
 const Base58 = require('base-58');
 const parquet = require('parquetjs-lite');
@@ -60,7 +60,7 @@ async function uploadToS3(data){
     'ContentType':'application/octet-stream'
   }
   await s3.upload(param).promise()
-  fs.unlinkSync(filename) 
+  fs.unlinkSync(filename)
 }
 
 async function uploadToGCS(data) {
@@ -117,39 +117,40 @@ async function sendSlackMsg(msg) {
 async function sendZeroSol(){
   var data = {
     executedAt: new Date().getTime(),
-    txhash: '', // Solana has no txHash. Instead, it uses tx signature. 
+    txhash: '', // Solana has no txHash. Instead, it uses tx signature.
     startTime: 0,
     endTime: 0,
-    chainId: process.env.CHAIN_ID, //Solana has no chainId. 
+    chainId: process.env.CHAIN_ID, //Solana has no chainId.
     latency:0,
     error:'',
-    txFee: 0.0, 
-    txFeeInUSD: 0.0, 
+    txFee: 0.0,
+    txFeeInUSD: 0.0,
     resourceUsedOfLatestBlock: 0,
     numOfTxInLatestBlock: 0,
     pingTime:0
-  } 
+  }
 
   try{
-    //check balance 
+    //check balance
     const balance = await connection.getBalance(keypair.publicKey)
     if(balance*(10**(-9)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_SOL))
-    { 
+    {
       sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${keypair.publicKey}?cluster=${process.env.CLUSTER_NAME}|${keypair.publicKey}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SOL} SOL! balance=${balance*(10**(-9))} SOL`)
     }
-  
+
     const startGetBlockHash = new Date().getTime();
     var blockhash;
     await connection.getLatestBlockhashAndContext().then(async (result)=>{
       // Measure Latency for getLatestBlock
       const endGetBlockHash = new Date().getTime()
-      data.pingTime = endGetBlockHash - startGetBlockHash; 
+      data.pingTime = endGetBlockHash - startGetBlockHash;
       blockhash = result.value.blockhash
-      // Get the number of processed transactions 
-      await connection.getBlock(result.context.slot).then((response)=>{
+
+      // Get the number of processed transactions
+      await connection.getBlock(result.context.slot, {maxSupportedTransactionVersion: 0}).then((response)=>{
         data.numOfTxInLatestBlock = response.transactions.length
       });
-      // Get the number of Singatures in the block 
+      // Get the number of Singatures in the block
       await connection.getBlockSignatures(result.context.slot).then((res)=>{
         data.resourceUsedOfLatestBlock = res.signatures.length
       })
@@ -157,8 +158,8 @@ async function sendZeroSol(){
 
     const instruction = web3.SystemProgram.transfer({
       fromPubkey: keypair.publicKey,
-      toPubkey: keypair.publicKey, 
-      lamports: 0, 
+      toPubkey: keypair.publicKey,
+      lamports: 0,
     });
 
     const tx = new web3.Transaction({
@@ -167,17 +168,17 @@ async function sendZeroSol(){
     }).add(instruction);
     tx.sign(keypair)
 
-    // Write starttime 
+    // Write starttime
     const start = new Date().getTime()
     data.startTime = start
 
     // Send signed transaction and wait til confirmation
     const signature = await web3.sendAndConfirmRawTransaction(
       connection,
-      tx.serialize(), // tx serialized in wire format 
+      tx.serialize(), // tx serialized in wire format
     )
 
-    // Calc latency 
+    // Calc latency
     const end = new Date().getTime()
     data.endTime = end
     data.latency = end-start
