@@ -1,5 +1,5 @@
 // Harmony transaction latency measurement.
-// Reference of Sending Transaction using Web3.js:https://docs.harmony.one/home/developers/sdk/web3/send-transaction 
+// Reference of Sending Transaction using Web3.js:https://docs.harmony.one/home/developers/sdk/web3/send-transaction
 
 const Web3 = require('web3');
 const BN = require('bn.js');
@@ -32,23 +32,23 @@ async function makeParquetFile(data) {
         numOfTxInLatestBlock:{type:'INT64'},
         pingTime:{type:'INT64'}
     })
-  
+
     var d = new Date()
     //20220101_032921
     var datestring = moment().format('YYYYMMDD_HHmmss')
-  
+
     var filename = `${datestring}_${data.chainId}.parquet`
-  
+
     // create new ParquetWriter that writes to 'filename'
     var writer = await parquet.ParquetWriter.openFile(schema, filename);
-  
+
     await writer.appendRow(data)
-  
+
     await writer.close()
-  
+
     return filename;
 }
-  
+
 async function sendSlackMsg(msg) {
     axios.post(process.env.SLACK_API_URL, {
         'channel':process.env.SLACK_CHANNEL,
@@ -61,7 +61,7 @@ async function sendSlackMsg(msg) {
         }
     })
 }
-  
+
 async function uploadToS3(data){
     if(process.env.S3_BUCKET === "") {
         throw "undefined bucket name"
@@ -76,8 +76,8 @@ async function uploadToS3(data){
         'ContentType':'application/octet-stream'
     }
     await s3.upload(param).promise()
-  
-    fs.unlinkSync(filename) 
+
+    fs.unlinkSync(filename)
 }
 
 async function uploadToGCS(data) {
@@ -128,7 +128,7 @@ async function sendTx(){
         latency:0,
         error:'',
         txFee: 0.0,
-        txFeeInUSD: 0.0, 
+        txFeeInUSD: 0.0,
         resourceUsedOfLatestBlock: 0,
         numOfTxInLatestBlock: 0,
         pingTime:0
@@ -148,7 +148,7 @@ async function sendTx(){
         })
 
         const latestNonce = await web3.eth.getTransactionCount(signerAddress);
-        if (latestNonce == prevNonce) 
+        if (latestNonce == prevNonce)
         {
             // console.log(`Nonce ${latestNonce} = ${prevNonce}`)
             return;
@@ -158,11 +158,11 @@ async function sendTx(){
         const lastBlockNumber = await web3.eth.getBlockNumber();
         const endGetBlock = new Date().getTime()
         data.pingTime = endGetBlock - startGetBlock
-        
+
         let blockInfo = await web3.eth.getBlock(lastBlockNumber);
         data.resourceUsedOfLatestBlock = blockInfo.gasUsed;
         data.numOfTxInLatestBlock = blockInfo.transactions.length;
-        
+
         const gasPrice = new BN(await web3.eth.getGasPrice()).mul(new BN(1))
         const rawTx = {
             from: signerAddress,
@@ -176,13 +176,13 @@ async function sendTx(){
         var RLPEncodedTx;
         await web3.eth.accounts.signTransaction(rawTx, process.env.HMY_PRIVATE_KEY)
         .then((result)=>
-        {   
+        {
             RLPEncodedTx = result.rawTransaction // RLP encoded transaction & already HEX value
             data.txhash = result.transactionHash // the transaction hash of the RLP encoded transaction.
         })
 
         const originalPrevNonce = prevNonce
-        // Send Signed transaction        
+        // Send Signed transaction
         const start = new Date().getTime()
         data.startTime = start
         await web3.eth
@@ -199,8 +199,8 @@ async function sendTx(){
         .on('error', function(err){
             prevNonce = originalPrevNonce
         })
-        
-        // Calculate Transaction Fee and Get Tx Fee in USD 
+
+        // Calculate Transaction Fee and Get Tx Fee in USD
         var ONEtoUSD;
         await CoinGeckoClient.simple.price({
             ids: ["harmony"],
@@ -230,7 +230,7 @@ async function main(){
     if(privateKey === "") {
         const account = web3.eth.accounts.create(web3.utils.randomHex(32));
         console.log(`Private key is not defined. Use this new private key(${account.privateKey}).`)
-        console.log(`Get test ONE from the faucet: http://dev.faucet.easynode.one/`)
+        console.log(`Get test ONE from the faucet: https://faucet.pops.one/`)
         console.log(`Your Harmony address = ${account.address}`)
         return
     }
@@ -241,5 +241,5 @@ async function main(){
       sendTx()
     }, interval)
 }
-  
+
 main();
