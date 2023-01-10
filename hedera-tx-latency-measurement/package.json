@@ -1,12 +1,12 @@
 {
   "dependencies": {
-    "@hashgraph/sdk": "^2.18.5",
-    "aws-sdk": "^2.1136.0",
-    "axios": "^0.27.2",
-    "coingecko-api": "^1.0.10",
-    "dotenv": "^16.0.1",
-    "moment": "^2.29.3",
-    "parquetjs-lite": "^0.8.7",
+    "@hashgraph/sdk": "2.18.5",
+    "aws-sdk": "2.1136.0",
+    "axios": "0.27.2",
+    "coingecko-api": "1.0.10",
+    "dotenv": "16.0.1",
+    "moment": "2.29.3",
+    "parquetjs-lite": "0.8.7",
     "@google-cloud/storage": "^6.0.0"
   }
 }
