@@ -1,5 +1,5 @@
-// Polygon PoS transaction latency measurement. 
-// Reference of Sending Transaction using Javascript: https://docs.polygon.technology/docs/develop/eip1559-transactions/how-to-send-eip1559-transactions/ 
+// Polygon PoS transaction latency measurement.
+// Reference of Sending Transaction using Javascript: https://docs.polygon.technology/docs/develop/eip1559-transactions/how-to-send-eip1559-transactions/
 const Web3 = require('web3')
 const fs = require('fs')
 const AWS = require('aws-sdk')
@@ -16,7 +16,7 @@ const web3 = new Web3(provider);
 const CoinGeckoClient = new CoinGecko();
 
 const privateKey = process.env.SIGNER_PRIVATE_KEY;
-var PrevNonce = null; 
+var PrevNonce = null;
 
 async function makeParquetFile(data) {
   var schema = new parquet.ParquetSchema({
@@ -80,7 +80,7 @@ async function uploadToS3(data){
 
   await s3.upload(param).promise()
 
-  fs.unlinkSync(filename) 
+  fs.unlinkSync(filename)
 }
 
 async function uploadToGCS(data) {
@@ -130,27 +130,27 @@ async function sendTx(){
     chainId: 0,
     latency:0,
     error:'',
-    txFee: 0.0, 
-    txFeeInUSD: 0.0, 
+    txFee: 0.0,
+    txFeeInUSD: 0.0,
     resourceUsedOfLatestBlock: 0,
     numOfTxInLatestBlock: 0,
-    pingTime:0 
+    pingTime:0
   }
 
-  try{    
-    // Add your private key 
+  try{
+    // Add your private key
     const signer = web3.eth.accounts.privateKeyToAccount(
       privateKey
     );
-    const balance = await web3.eth.getBalance(signer.address); //in wei  
+    const balance = await web3.eth.getBalance(signer.address); //in wei
 
     if(balance*(10**(-18)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_MATIC))
-    { 
+    {
       sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_MATIC} MATIC! balance=${balance*(10**(-18))} MATIC`)
     }
 
-    const latestNonce = await web3.eth.getTransactionCount(signer.address)
-    if (latestNonce == PrevNonce) 
+    const latestNonce = await web3.eth.getTransactionCount(signer.address, 'pending')
+    if (!!PrevNonce && latestNonce != (PrevNonce+1))
     {
       // console.log(`Nonce ${latestNonce} = ${PrevNonce}`)
       return;
@@ -166,7 +166,7 @@ async function sendTx(){
       data.numOfTxInLatestBlock = result.transactions.length
     })
 
-    // Option 1. Use gasstation https://docs.polygon.technology/docs/develop/tools/polygon-gas-station/ 
+    // Option 1. Use gasstation https://docs.polygon.technology/docs/develop/tools/polygon-gas-station/
     const gasStationResult = await axios.get(process.env.GAS_STATION_URL, {
       headers:{
         "Content-Type": "application/json"
@@ -175,7 +175,7 @@ async function sendTx(){
     const maxPriorityFeePerGas = web3.utils.toHex(Math.round(gasStationResult.data.standard.maxPriorityFee * 1e9))
     const maxFeePerGas = web3.utils.toHex(Math.round(gasStationResult.data.standard.maxFee * 1e9))
 
-    // Option 2. Calculate maxPriorityFeePerGas based on Fee History 
+    // Option 2. Calculate maxPriorityFeePerGas based on Fee History
     // https://web3js.readthedocs.io/en/v1.5.0/web3-eth.html#getfeehistory
     // await web3.eth.getFeeHistory(10, "latest", [50]).then((result)=>{
     //   baseFee = Number(result.baseFeePerGas[3])// expected base Fee value (in wei)
@@ -183,11 +183,11 @@ async function sendTx(){
     //   result.reward.forEach(element => {
     //     sum += Number(element[0])
     //   });
-    //   sum /= 10 
-    //   maxPriorityFeePerGas = web3.utils.toHex(Math.round(sum).toString())//in wei 
+    //   sum /= 10
+    //   maxPriorityFeePerGas = web3.utils.toHex(Math.round(sum).toString())//in wei
     // });
 
-    //create value transfer transaction (EIP-1559) 
+    //create value transfer transaction (EIP-1559)
     const tx = {
       type: 2,
       nonce: latestNonce,
@@ -195,8 +195,8 @@ async function sendTx(){
       to:  signer.address,
       value: web3.utils.toHex(web3.utils.toWei("0", "ether")),
       gas: 21000,
-      maxPriorityFeePerGas, // 2.5 Gwei is a default 
-      maxFeePerGas // default maxFeePerGas = (2 * block.baseFeePerGas) + maxPriorityFeePerGas 
+      maxPriorityFeePerGas, // 2.5 Gwei is a default
+      maxFeePerGas // default maxFeePerGas = (2 * block.baseFeePerGas) + maxPriorityFeePerGas
     }
 
     //Sign to the transaction
@@ -206,33 +206,26 @@ async function sendTx(){
       RLPEncodedTx = result.rawTransaction // RLP encoded transaction & already HEX value
       data.txhash = result.transactionHash // the transaction hash of the RLP encoded transaction.
     });
- 
+
     await web3.eth.net.getId().then((result)=>{
-      data.chainId = result 
+      data.chainId = result
     })
     const start = new Date().getTime()
-    data.startTime = start 
-
-    const originalPrevNonce = PrevNonce
+    data.startTime = start
 
     // Send signed transaction
     await web3.eth
-    .sendSignedTransaction(RLPEncodedTx) // Signed transaction data in HEX format 
-    .on('sent', function(){
+    .sendSignedTransaction(RLPEncodedTx) // Signed transaction data in HEX format
+    .then(function(receipt){
       PrevNonce = latestNonce
-    })
-    .on('receipt', function(receipt){
       data.txhash = receipt.transactionHash
       const end = new Date().getTime()
       data.endTime = end
       data.latency = end-start
       data.txFee = receipt.gasUsed * web3.utils.fromWei(receipt.effectiveGasPrice.toString())
     })
-    .on('error', function(err){
-      PrevNonce = originalPrevNonce
-    })
 
-    // Calculate Transaction Fee and Get Tx Fee in USD 
+    // Calculate Transaction Fee and Get Tx Fee in USD
     var MATICtoUSD;
     await CoinGeckoClient.simple.price({
       ids: ["matic-network"],
@@ -240,7 +233,7 @@ async function sendTx(){
     }).then((response)=>{
       MATICtoUSD = response.data["matic-network"]["usd"]
     })
-    data.txFeeInUSD = data.txFee * MATICtoUSD 
+    data.txFeeInUSD = data.txFee * MATICtoUSD
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
@@ -259,7 +252,7 @@ async function sendTx(){
 async function main(){
   const start = new Date().getTime()
   console.log(`starting tx latency measurement... start time = ${start}`)
-  
+
   if(privateKey === "") {
     const account = web3.eth.accounts.create(web3.utils.randomHex(32));
     console.log(`Private key is not defined. Use this new private key(${account.privateKey}).`)
