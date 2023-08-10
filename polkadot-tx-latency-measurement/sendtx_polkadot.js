@@ -3,6 +3,7 @@
 // 1. Transfer Event: https://polkadot.js.org/docs/api/examples/promise/transfer-events
 // 2. Transfer error handling: https://polkadot.js.org/docs/extension/cookbook/
 // 3. Listen to New blocks: https://polkadot.js.org/docs/api/examples/promise/listen-to-blocks
+// 4. QueryFeeDetails: https://spec.polkadot.network/chap-runtime-api#sect-rte-transactionpaymentapi-query-fee-details
 
 const { ApiPromise, WsProvider } = require("@polkadot/api");
 const { Keyring } = require('@polkadot/keyring');
@@ -160,66 +161,62 @@ async function sendTx(){
         }
 
         const startGetBlock = new Date().getTime()
-        const unsubscribe = await api.rpc.chain.getFinalizedHead(async (header)=>{
-            const endGetBlock = new Date().getTime();
-            const latestBlockHash = header.toJSON();
-            data.pingTime = endGetBlock - startGetBlock;
-            unsubscribe();
+        const header = await api.rpc.chain.getFinalizedHead();
+        const endGetBlock = new Date().getTime();
+        const latestBlockHash = header.toJSON();
+        data.pingTime = endGetBlock - startGetBlock;
 
-            // Calculate the number of transactions and resource used in the latest block.
-            const unsubscribeLatestBlockInfo = await api.rpc.chain.getBlock(latestBlockHash, async(latestBlockInfo)=>{
-                const transactions = latestBlockInfo.toJSON().block.extrinsics;
-                unsubscribeLatestBlockInfo();
-                data.numOfTxInLatestBlock = transactions.length;
-                var weightUsed = 0
-                for await (const tx of transactions)
-                {
-                    const paymentInfo = await api.call.transactionPaymentApi.queryInfo(tx, 1)
-                    weightUsed += Number(paymentInfo.toJSON().weight)
-                }
-                data.resourceUsedOfLatestBlock = Math.round(weightUsed * (10**(-9)))
+        // Calculate the number of transactions and resource used in the latest block.
+        const latestBlockInfo = await api.rpc.chain.getBlock(latestBlockHash)
 
-                // Create value transfer transaction.
-                const transfer = api.tx.balances.transfer(senderAddress, 0);
+        const transactions = latestBlockInfo.toJSON().block.extrinsics;
+        data.numOfTxInLatestBlock = transactions.length;
+        var weightUsed = 0
+        for await (const tx of transactions)
+        {
+            const paymentInfo = await api.call.transactionPaymentApi.queryInfo(tx, 1)
+            weightUsed += Number(paymentInfo.toJSON().weight.refTime)
+        }
+        data.resourceUsedOfLatestBlock = Math.round(weightUsed * (10**(-9)))
 
-                // Sign transaction.
-                await transfer.signAsync(sender);
+        // Create value transfer transaction.
+        const transfer = api.tx.balances.transfer(senderAddress, 0);
 
-                // Send Transaction and wait until the transaction is in block.
-                const start = new Date().getTime()
-                data.startTime = start
-                const unsubscribeTransactionSend = await transfer.send(async (result) => {
-                    if(result.isInBlock)
-                    {
-                        unsubscribeTransactionSend();
-                        const end = new Date().getTime()
-                        data.endTime = end
-                        data.latency = end-start
-                        data.txhash = '0x' + Buffer.from(result.txHash).toString('hex')
+        // Sign transaction.
+        await transfer.signAsync(sender);
 
-                        //Calculate tx using BlockHash and txIndex
-                        const unsubBlockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock, async (blockInfo)=>{
-                            unsubBlockInfo();
-                            const feeDetails = await api.rpc.payment.queryFeeDetails(blockInfo.toJSON().block.extrinsics[result.txIndex]); //parameter is BlockHash
-                            const inclusionFee = feeDetails.toJSON().inclusionFee;
-                            data.txFee = (inclusionFee.baseFee + inclusionFee.lenFee + inclusionFee.adjustedWeightFee)*decimal
+        // Send Transaction and wait until the transaction is in block.
+        const start = new Date().getTime()
+        data.startTime = start
+        const unsubscribeTransactionSend = await transfer.send(async (result) => {
+            if(result.isInBlock)
+            {
+                unsubscribeTransactionSend();
+                const end = new Date().getTime()
+                data.endTime = end
+                data.latency = end-start
+                data.txhash = '0x' + Buffer.from(result.txHash).toString('hex')
 
-                            //Calculate txFee in USD
-                            var DOTtoUSD;
-                            await CoinGeckoClient.simple.price({
-                                ids: ["polkadot"],
-                                vs_currencies: ["usd"]
-                            }).then((response)=>{
-                                DOTtoUSD = response.data["polkadot"]["usd"]
-                            })
-                            data.txFeeInUSD = data.txFee * DOTtoUSD
-                            console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-                            await uploadChoice(data);
-                        });
-                    }
+                //Calculate tx using BlockHash and txIndex
+                const blockInfo = await api.rpc.chain.getBlock(result.toHuman().status.InBlock)
+                const feeDetails = await api.rpc.payment.queryFeeDetails(blockInfo.toJSON().block.extrinsics[result.txIndex]); //parameter is BlockHash
+                const inclusionFee = feeDetails.toJSON().inclusionFee;
+                data.txFee = (inclusionFee.baseFee + inclusionFee.lenFee + inclusionFee.adjustedWeightFee)*decimal
+
+                //Calculate txFee in USD
+                var DOTtoUSD;
+                await CoinGeckoClient.simple.price({
+                    ids: ["polkadot"],
+                    vs_currencies: ["usd"]
+                }).then((response)=>{
+                    DOTtoUSD = response.data["polkadot"]["usd"]
                 })
-            });
-        });
+                data.txFeeInUSD = data.txFee * DOTtoUSD
+                console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+                await uploadChoice(data);
+
+            }
+        })
     } catch(err){
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
@@ -232,7 +229,6 @@ async function main(){
     const start = new Date().getTime()
     console.log(`starting tx latency measurement... start time = ${start}`)
     api = await ApiPromise.create({provider: wsProvider});
-
     if (process.env.SENDER_MNEMONIC === ""){
         const newMnemonic = mnemonicGenerate();
         const keyring = new Keyring({type: 'sr25519'});

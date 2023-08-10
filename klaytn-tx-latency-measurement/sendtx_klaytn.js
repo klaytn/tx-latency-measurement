@@ -1,4 +1,4 @@
-// Klaytn transaction latency measurement. 
+// Klaytn transaction latency measurement.
 // Reference of Sending Transaction using CaverJS: https://docs.kaikas.io/02_api_reference/02_caver_methods
 const fs = require('fs')
 const Caver = require('caver-js')
@@ -144,11 +144,11 @@ async function sendTx() {
         chainId: 0,
         latency:0,
         error:'',
-        txFee: 0.0, 
-        txFeeInUSD: 0.0, 
+        txFee: 0.0,
+        txFeeInUSD: 0.0,
         resourceUsedOfLatestBlock: 0,
         numOfTxInLatestBlock: 0,
-        pingTime:0 
+        pingTime:0
     }
 
     try {
@@ -172,13 +172,13 @@ async function sendTx() {
         const chainId = caver.utils.hexToNumber(signed.chainId)
         data.chainId = chainId
 
-        // Measure latency of getBlock 
+        // Measure latency of getBlock
         const startGetBlockNumber = new Date().getTime()
         const latestBlockNumber = await caver.klay.getBlockNumber()
         const endGetBlockNumber = new Date().getTime()
         data.pingTime = endGetBlockNumber - startGetBlockNumber
 
-        // Get latest block info 
+        // Get latest block info
         const blockInfo = await caver.klay.getBlock(latestBlockNumber)
         data.resourceUsedOfLatestBlock = caver.utils.hexToNumber(blockInfo.gasUsed)
         data.numOfTxInLatestBlock = blockInfo.transactions.length
@@ -193,10 +193,10 @@ async function sendTx() {
         data.txhash = receipt.transactionHash
         data.endTime = end
         data.latency = end-start
-        
+
         var KLAYtoUSD;
         await CoinGeckoClient.simple.price({
-            ids: ['klay-token'], 
+            ids: ['klay-token'],
             vs_currencies:['usd']
         }).then((response)=> {
             KLAYtoUSD = response.data['klay-token']['usd']

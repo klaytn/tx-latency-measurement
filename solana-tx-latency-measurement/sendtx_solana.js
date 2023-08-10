@@ -139,13 +139,13 @@ async function sendZeroSol(){
     }
 
     const startGetBlockHash = new Date().getTime();
-    var blockhash;
+    var blockhash, lastValidBlockHeight;
     await connection.getLatestBlockhashAndContext().then(async (result)=>{
       // Measure Latency for getLatestBlock
       const endGetBlockHash = new Date().getTime()
       data.pingTime = endGetBlockHash - startGetBlockHash;
       blockhash = result.value.blockhash
-
+      lastValidBlockHeight = result.value.lastValidBlockHeight
       // Get the number of processed transactions
       await connection.getBlock(result.context.slot, {maxSupportedTransactionVersion: 0}).then((response)=>{
         data.numOfTxInLatestBlock = response.transactions.length
@@ -163,8 +163,9 @@ async function sendZeroSol(){
     });
 
     const tx = new web3.Transaction({
-      recentBlockhash: blockhash,
-      feePayer: keypair.publicKey
+      blockhash: blockhash,
+      feePayer: keypair.publicKey,
+      lastValidBlockHeight: lastValidBlockHeight,
     }).add(instruction);
     tx.sign(keypair)
 

@@ -1,6 +1,6 @@
 // Polygon PoS transaction latency measurement.
 // Reference of Sending Transaction using Javascript: https://docs.polygon.technology/docs/develop/eip1559-transactions/how-to-send-eip1559-transactions/
-const Web3 = require('web3')
+const {Web3} = require('web3')
 const fs = require('fs')
 const AWS = require('aws-sdk')
 const parquet = require('parquetjs-lite')
@@ -144,12 +144,12 @@ async function sendTx(){
     );
     const balance = await web3.eth.getBalance(signer.address); //in wei
 
-    if(balance*(10**(-18)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_MATIC))
+    if(Number(balance)*(10**(-18)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_MATIC))
     {
       sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_MATIC} MATIC! balance=${balance*(10**(-18))} MATIC`)
     }
 
-    const latestNonce = await web3.eth.getTransactionCount(signer.address, 'pending')
+    const latestNonce = Number(await web3.eth.getTransactionCount(signer.address, 'pending'))
     if (!!PrevNonce && latestNonce != (PrevNonce+1))
     {
       // console.log(`Nonce ${latestNonce} = ${PrevNonce}`)
@@ -162,7 +162,7 @@ async function sendTx(){
     data.pingTime = endGetBlock - startGetBlock
 
     await web3.eth.getBlock(latestBlockNumber).then((result)=>{
-      data.resourceUsedOfLatestBlock = result.gasUsed
+      data.resourceUsedOfLatestBlock = Number(result.gasUsed)
       data.numOfTxInLatestBlock = result.transactions.length
     })
 
@@ -208,7 +208,7 @@ async function sendTx(){
     });
 
     await web3.eth.net.getId().then((result)=>{
-      data.chainId = result
+      data.chainId = Number(result)
     })
     const start = new Date().getTime()
     data.startTime = start
@@ -222,7 +222,7 @@ async function sendTx(){
       const end = new Date().getTime()
       data.endTime = end
       data.latency = end-start
-      data.txFee = receipt.gasUsed * web3.utils.fromWei(receipt.effectiveGasPrice.toString())
+      data.txFee = Number(receipt.gasUsed) * Number(web3.utils.fromWei(Number(receipt.effectiveGasPrice), "ether"))
     })
 
     // Calculate Transaction Fee and Get Tx Fee in USD
