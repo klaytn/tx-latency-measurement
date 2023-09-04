@@ -80,3 +80,8 @@ failed to s3.upload! Printing instead! undefined bucket name
 - [x] Hedera
 - [x] Elrond
 - [x] Harmony
+
+When you'd like to contribute this repository (ex: to add another chain)
+1. Please find out ways to collect data like other chains in this repo. You might be able to use javascript sdk for other chains.
+2. Open a new pull request and write what you collect for data (ex: total gas used in the latest block for `resourceUsedOfLatestBlock`)
+3. Set `@Yeonju Kim` as a reviewer.
