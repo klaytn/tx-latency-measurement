@@ -81,7 +81,16 @@ failed to s3.upload! Printing instead! undefined bucket name
 - [x] Elrond
 - [x] Harmony
 
-When you'd like to contribute this repository (ex: to add another chain)
+### 7) When you'd like to contribute this repository (ex: to add another chain)
 1. Please find out ways to collect data like other chains in this repo. You might be able to use javascript sdk for other chains.
-2. Open a new pull request and write which info you collect for data (ex: total gas used in the latest block for `resourceUsedOfLatestBlock`)
-3. Set `@Yeonju Kim` as a reviewer.
+2. What should be included in your code
+    1. Use same structure(ex: [sendtx_klaytn.js](https://github.com/klaytn/tx-latency-measurement/blob/dev/klaytn-tx-latency-measurement/sendtx_klaytn.js) & [.env.template](https://github.com/klaytn/tx-latency-measurement/blob/dev/klaytn-tx-latency-measurement/.env.template)) and functions(ex: uploadToS3, uploadToGCS, uploadChoice, makeParquetFile, loadConfig, sendSlackMsg in [sendtx_klaytn.js](https://github.com/klaytn/tx-latency-measurement/blob/dev/klaytn-tx-latency-measurement/sendtx_klaytn.js))
+    2. In sendTx function, check if balance of the account is enough to send transaction and set `chainId`.
+    3. Measure pingtime using simple rpc api (like getBlockNumber())
+    4. Measure `resourceUsedOfLatestBlock`‎ & `numOfTxInLatestBlock`‎ from the latest block info. 
+    5. Configure the transaction and sign it with private key.
+    6. Measure the time it took for the signed transaction to be confirmed and receive a receipt. Enter the `txHash`, `start time`, `end time`, and `latency`(time in between) into the data.
+    7. Calculate `txFeeInUSD` using CoinGecko API, then record `txFee`(in Native Coin) and `txFeeInUSD` into data.
+    8. If an error occurs, write the `error` to the data. 
+3. Open a new pull request and write which info you collect for data (ex: total gas used in the latest block for `resourceUsedOfLatestBlock`)
+4. Set `@Yeonju-Kim` as a reviewer.
