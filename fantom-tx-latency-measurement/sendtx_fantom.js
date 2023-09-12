@@ -1,4 +1,4 @@
-// Fantom transaction latency measurement. 
+// Fantom transaction latency measurement.
 // Reference of Sending Transaction using Javascript: https://github.com/Fantom-foundation/fantom-web3-wallet/blob/master/index.js
 
 const Web3 = require('web3');
@@ -32,23 +32,23 @@ async function makeParquetFile(data) {
         numOfTxInLatestBlock:{type:'INT64'},
         pingTime:{type:'INT64'}
     })
-  
+
     var d = new Date()
     //20220101_032921
     var datestring = moment().format('YYYYMMDD_HHmmss')
-  
+
     var filename = `${datestring}_${data.chainId}.parquet`
-  
+
     // create new ParquetWriter that writes to 'filename'
     var writer = await parquet.ParquetWriter.openFile(schema, filename);
-  
+
     await writer.appendRow(data)
-  
+
     await writer.close()
-  
+
     return filename;
 }
-  
+
 async function sendSlackMsg(msg) {
     axios.post(process.env.SLACK_API_URL, {
         'channel':process.env.SLACK_CHANNEL,
@@ -61,7 +61,7 @@ async function sendSlackMsg(msg) {
         }
     })
 }
-  
+
 async function uploadToS3(data){
     if(process.env.S3_BUCKET === "") {
         throw "undefined bucket name"
@@ -76,8 +76,8 @@ async function uploadToS3(data){
         'ContentType':'application/octet-stream'
     }
     await s3.upload(param).promise()
-  
-    fs.unlinkSync(filename) 
+
+    fs.unlinkSync(filename)
 }
 
 async function uploadToGCS(data) {
@@ -127,22 +127,22 @@ async function sendTx(){
         chainId: 0,
         latency:0,
         error:'',
-        txFee: 0.0, 
-        txFeeInUSD: 0.0, 
+        txFee: 0.0,
+        txFeeInUSD: 0.0,
         resourceUsedOfLatestBlock: 0,
         numOfTxInLatestBlock: 0,
-        pingTime:0 
+        pingTime:0
     }
-    
+
     try{
         const signer = web3.eth.accounts.privateKeyToAccount(
             process.env.SIGNER_PRIVATE_KEY
         );
-        const balance = await web3.eth.getBalance(signer.address)
+        const balance = (await web3.eth.getBalance(signer.address)) * (10**(-18))
 
-        if(balance*(10**(-18)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_FTM))
+        if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_FTM))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_FTM} FTM! balance=${balance*(10**(-18))} FTM`)
+            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_FTM} FTM! balance=${balance} FTM`)
         }
 
         await web3.eth.net.getId().then((id)=>{
@@ -152,11 +152,11 @@ async function sendTx(){
         if (gasPrice * (10**(-9)) > process.env.MAX_GAS_PRICE)
         {
             console.log(`Gas Price ${gasPrice*(10**(-9))} Gwei is bigger than Gas Price limit ${process.env.MAX_GAS_PRICE} Gwei.`)
-            return; 
+            return;
         }
 
         const latestNonce = await web3.eth.getTransactionCount(signer.address);
-        if (latestNonce == PrevNonce) 
+        if (latestNonce == PrevNonce)
         {
         //   console.log(`Nonce ${latestNonce} = ${PrevNonce}`)
           return;
@@ -173,7 +173,7 @@ async function sendTx(){
         })
 
         const rawTx = {
-            from: signer.address, 
+            from: signer.address,
             to: signer.address,
             value: Web3.utils.toHex(Web3.utils.toWei("0", 'ether')),
             gasLimit: Web3.utils.toHex(21000),
@@ -184,11 +184,11 @@ async function sendTx(){
         var RLPEncodedTx;
         await web3.eth.accounts.signTransaction(rawTx, privateKey)
         .then((result)=>
-        {   
+        {
             RLPEncodedTx = result.rawTransaction // RLP encoded transaction & already HEX value
             data.txhash = result.transactionHash // the transaction hash of the RLP encoded transaction.
         })
-        
+
         const originalPrevNonce = PrevNonce
         // Send signed transaction
         const start = new Date().getTime()
@@ -208,7 +208,7 @@ async function sendTx(){
             PrevNonce = originalPrevNonce
         })
 
-        // Calculate Transaction Fee and Get Tx Fee in USD 
+        // Calculate Transaction Fee and Get Tx Fee in USD
         var FTMtoUSD;
         await CoinGeckoClient.simple.price({
             ids: ["fantom"],
@@ -217,7 +217,7 @@ async function sendTx(){
             FTMtoUSD = response.data["fantom"]["usd"]
         })
         data.txFeeInUSD = data.txFee * FTMtoUSD
-        
+
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){
         console.log("failed to execute.", err.toString())
@@ -249,7 +249,7 @@ async function main(){
     setInterval(()=>{
       sendTx()
     }, interval)
-  
+
 }
-  
+
 main();

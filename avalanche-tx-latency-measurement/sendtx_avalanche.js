@@ -1,4 +1,4 @@
-// Avalanche C-chain transaction latency measurement. 
+// Avalanche C-chain transaction latency measurement.
 // Reference of Sending Transaction using Javascript: https://docs.avax.network/quickstart/sending-transactions-with-dynamic-fees-using-javascript/
 const ethers = require('ethers');
 const Avalanche = require('avalanche').Avalanche;
@@ -11,7 +11,7 @@ const CoinGecko = require('coingecko-api');
 const {Storage} = require('@google-cloud/storage');
 require('dotenv').config();
 
-var address = ""; 
+var address = "";
 var wallet;
 
 const nodeURL = process.env.PUBLIC_RPC_URL;
@@ -21,8 +21,8 @@ const chainId = process.env.CHAIN_ID;
 const avalanche = new Avalanche(process.env.AVALANCHE_HOST, undefined, 'https', chainId);
 const cchain = avalanche.CChain();
 
-const CoinGeckoClient = new CoinGecko(); 
-var PrevNonce = null; 
+const CoinGeckoClient = new CoinGecko();
+var PrevNonce = null;
 
 async function makeParquetFile(data) {
     var schema = new parquet.ParquetSchema({
@@ -82,7 +82,7 @@ async function uploadToS3(data){
       'ContentType':'application/octet-stream'
     }
     await s3.upload(param).promise()
-    fs.unlinkSync(filename) 
+    fs.unlinkSync(filename)
 }
 
 async function uploadToGCS(data) {
@@ -122,7 +122,7 @@ async function uploadChoice(data) {
         throw "Improper upload method"
     }
 }
-  
+
 // Function to estimate max fee and max priority fee
 const calcFeeData = async (maxFeePerGas = undefined, maxPriorityFeePerGas = undefined) => {
     // Get Base Fee: this value is just an estimate
@@ -152,23 +152,22 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         chainId: chainId,
         latency:0,
         error:'',
-        txFee: 0.0, 
-        txFeeInUSD: 0.0, 
+        txFee: 0.0,
+        txFeeInUSD: 0.0,
         resourceUsedOfLatestBlock: 0,
         numOfTxInLatestBlock: 0,
-        pingTime:0 
+        pingTime:0
     }
 
     try{
-        const balance = await HTTPSProvider.getBalance(address) // getAssetBalance
-        if(balance*(10**(-18)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_AVAX))
+        const balance = (await HTTPSProvider.getBalance(address)) * (10**(-18))// getAssetBalance
+        if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_AVAX))
         {
-            // console.log(`Current balance of ${address} is less than ${process.env.BALANCE_ALERT_CONDITION_IN_AVAX} AVAX! balance=${balance*(10**(-18))}`)
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_AVAX} AVAX! balance=${balance*(10**(-18))} AVAX`)
+            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_AVAX} AVAX! balance=${balance} AVAX`)
         }
 
         const latestNonce = await HTTPSProvider.getTransactionCount(address);
-        if (latestNonce == PrevNonce) 
+        if (latestNonce == PrevNonce)
         {
             // console.log(`Nonce ${latestNonce} = ${PrevNonce}`)
             return;
@@ -179,13 +178,13 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         const latestBlockNumber = await HTTPSProvider.getBlockNumber()
         const endGetBlockNumber = new Date().getTime()
         data.pingTime = endGetBlockNumber - startGetBlockNumber
-        
-        // Get latest block for Network congestion info  
+
+        // Get latest block for Network congestion info
         await HTTPSProvider.getBlock(latestBlockNumber).then((res)=>{
             data.numOfTxInLatestBlock = res.transactions.length
             data.resourceUsedOfLatestBlock = Number(res.gasUsed)
         });
-        
+
         // If the max fee or max priority fee is not provided, then it will automatically calculate using CChain APIs
         ({ maxFeePerGas, maxPriorityFeePerGas } = await calcFeeData(maxFeePerGas, maxPriorityFeePerGas));
         maxFeePerGas = ethers.utils.parseUnits(maxFeePerGas, "gwei");
@@ -195,7 +194,7 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         const tx = {
             type: 2,
             nonce: latestNonce,
-            to, 
+            to,
             maxPriorityFeePerGas,
             maxFeePerGas,
             value: ethers.utils.parseEther(amount),
@@ -207,7 +206,7 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         const signedTx = await wallet.signTransaction(tx); //serialized (unsigned tx, signature) : rlp encoded (unsigned tx , signature)
         data.txhash = ethers.utils.keccak256(signedTx);
 
-        // Write starttime 
+        // Write starttime
         const start = new Date().getTime()
         data.startTime = start
 
@@ -215,12 +214,12 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         const signature = await (await HTTPSProvider.sendTransaction(signedTx)).wait(); //default confirmation number = 1
         PrevNonce = latestNonce
 
-        // Calculate latency 
+        // Calculate latency
         const end = new Date().getTime()
         data.endTime = end
         data.latency = end-start
 
-        // Get tx Fee and tx Fee in USD 
+        // Get tx Fee and tx Fee in USD
         var AVAXtoUSD;
         await CoinGeckoClient.simple.price({
             ids: ["avalanche-2"],
