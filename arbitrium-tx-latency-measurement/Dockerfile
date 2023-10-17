@@ -6,4 +6,4 @@ COPY . .
 
 RUN npm install
 
-CMD [ "node", "sendtx_klaytn.js" ]
+CMD [ "node", "sendtx_arbitrium.js" ]
