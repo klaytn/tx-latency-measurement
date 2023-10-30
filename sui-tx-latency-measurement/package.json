@@ -1,0 +1,22 @@
+{
+  "name": "tx-latency-measurement",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/storage": "^6.0.0",
+    "@mysten/sui.js": "^0.42.0",
+    "aws-sdk": "^2.1101.0",
+    "axios": "0.26.1",
+    "caver-js": "1.9.0",
+    "coingecko-api": "1.0.10",
+    "dotenv": "16.0.0",
+    "moment": "2.29.3",
+    "parquetjs-lite": "0.8.7"
+  }
+}
