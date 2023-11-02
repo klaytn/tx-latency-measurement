@@ -38,3 +38,4 @@ jobs:
               echo "Building image in $dir"
               docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-${IMAGE_TAG} .
           fi
+          done
