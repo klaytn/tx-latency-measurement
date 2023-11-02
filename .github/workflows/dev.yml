@@ -33,10 +33,12 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.AWS_DEV_ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          for dir in */; do
+          for dir in ./; do
             dir=${dir%/}
             if [ -f "$dir/Dockerfile" ]; then
+              cd $dir 
               echo "Building image in $dir"
               docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-${IMAGE_TAG} .
+              cd -
           fi
           done
