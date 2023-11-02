@@ -2,7 +2,7 @@ name: Build & push container image
 on:
   push:
     branches:
-      - dev
+      - tx_latency_measurement_cicd
 
 jobs:
   build-and-push:
@@ -42,6 +42,7 @@ jobs:
           for dir in */; do
             if [ -f "$dir/Dockerfile" ]; then
             echo "Building image in $dir"
-            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$SHA-$IMAGE_TAG .
-            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHA-$IMAGE_TAG
+            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-$SHA-$IMAGE_TAG .
+#            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHA-$IMAGE_TAG
           fi
+#          docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
