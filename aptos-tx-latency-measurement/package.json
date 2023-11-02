@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@google-cloud/storage": "^6.0.0",
-    "const alice = new AptosAccount();": "^1.20.0",
+    "aptos": "^1.20.0",
     "aws-sdk": "^2.1101.0",
     "axios": "0.26.1",
     "coingecko-api": "1.0.10",
