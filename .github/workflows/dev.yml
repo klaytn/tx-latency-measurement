@@ -31,13 +31,13 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.AWS_DEV_ECR_REPOSITORY }}
-#          IMAGE_TAG: ${{ github.sha }}
+        #          IMAGE_TAG: ${{ github.sha }}
         run: |
           git_hash=$(git rev-parse --short "$GITHUB_SHA")
           for dir in */; do
-            if [ -f "$dir/Dockerfile" ]; then
-            echo "Building image in $dir"
-            docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-${GITHUB_REF_NAME}.${git_hash} .
-#            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHA-$IMAGE_TAG
+          if [ -f "$dir/Dockerfile" ]; then
+          echo "Building image in $dir"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-${GITHUB_REF_NAME}.${git_hash} .
+          #            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$SHA-$IMAGE_TAG
           fi
 #          docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
