@@ -34,6 +34,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           for dir in */; do
+            dir=${dir%/}
             if [ -f "$dir/Dockerfile" ]; then
               echo "Building image in $dir"
               docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-${IMAGE_TAG} .
