@@ -43,4 +43,4 @@ jobs:
               cd -
           fi
           done
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY --all-tags
+          docker images
