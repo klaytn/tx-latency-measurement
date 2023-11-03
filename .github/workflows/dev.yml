@@ -2,7 +2,7 @@ name: Build & push container image
 on:
   push:
     branches:
-      - dev
+      - tx_latency_measurement_cicd
 
 jobs:
   build-and-push:
@@ -33,12 +33,13 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.AWS_DEV_ECR_REPOSITORY }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          git_hash=$(git rev-parse --short "$GITHUB_SHA")
           for dir in */; do
             dir=${dir%/}
             if [ -f "$dir/Dockerfile" ]; then
               cd $dir
               echo "Building image in $dir"
-              docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-${IMAGE_TAG} .
+              docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$dir-$git_hash .
               cd -
           fi
           done
