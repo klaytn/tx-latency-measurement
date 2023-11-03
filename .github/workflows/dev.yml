@@ -44,3 +44,4 @@ jobs:
               cd -
           fi
           done
+          docker images
