@@ -257,6 +257,7 @@ async function main() {
   // run sendTx every SEND_TX_INTERVAL
   const interval = eval(process.env.SEND_TX_INTERVAL);
   setInterval(() => {
+    console.log(process.env.SEND_TX_INTERVAL);
     sendTx();
   }, interval);
 }
