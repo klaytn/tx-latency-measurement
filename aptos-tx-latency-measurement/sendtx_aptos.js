@@ -106,8 +106,6 @@ async function makeParquetFile(data) {
 }
 
 function loadConfig() {
-  require("dotenv").config({ path: path.join(__dirname, ".env") });
-  return;
   if (process.env.NODE_URL === undefined) {
     // console.log("using .env")
     require("dotenv").config({ path: path.join(__dirname, ".env") });
