@@ -223,11 +223,11 @@ async function sendTx() {
         APTOStoUSD = response.data["aptos"]["usd"];
       });
     const transactionDetail = await client.getTransactionByHash(txnHash);
-    const gasUsed = transactionDetail.gas_used;
-    const gasUnitPrice = transactionDetail.gas_unit_price;
-    const txfee = gasUsed * gasUnitPrice * Math.pow(10, -8);
-    data.txFee = txfee;
-    data.txFeeInUSD = APTOStoUSD * data.txFee;
+     //const gasUsed = transactionDetail.gas_used;
+    //const gasUnitPrice = transactionDetail.gas_unit_price;
+    //const txfee = gasUsed * gasUnitPrice * Math.pow(10, -8);
+    //data.txFee = txfee;
+    //data.txFeeInUSD = APTOStoUSD * data.txFee;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
     console.log("failed to execute.", err.toString());
