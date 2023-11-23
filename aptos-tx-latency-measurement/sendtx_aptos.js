@@ -182,8 +182,6 @@ async function sendTx() {
     const coinClient = new CoinClient(client);
     const balance = await coinClient.checkBalance(account);
 
-    console.log(`Current balance of ${address} is ${balance} APTOS`);
-
     if (balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_APTOS)) {
       sendSlackMsg(
         `Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_APTOS} APTOS! balance=${balance} APTOS`
@@ -263,6 +261,7 @@ async function main() {
   // run sendTx every SEND_TX_INTERVAL
   const interval = eval(process.env.SEND_TX_INTERVAL);
   setInterval(() => {
+    console.log(`sending tx...`);
     sendTx();
   }, interval);
 }
