@@ -194,15 +194,15 @@ async function sendTx() {
 
     // Get latest block info
     const blockInfo = await client.getBlockByHeight(latestblock.block_height);
-    data.resourceUsedOfLatestBlock = "";
-    data.numOfTxInLatestBlock = "";
+    data.resourceUsedOfLatestBlock = 0;
+    data.numOfTxInLatestBlock = 0;
 
     // Transaction latency
     const start = new Date().getTime();
     data.startTime = start;
     let txnHash = await coinClient.transfer(account, account, 0, {
-      gasUnitPrice: BigInt(100),
-      maxGasAmount: BigInt(10),
+    gasUnitPrice: BigInt(100),
+    maxGasAmount: BigInt(10),
     });
     const end = new Date().getTime();
 
@@ -220,18 +220,17 @@ async function sendTx() {
       .then((response) => {
         APTOStoUSD = response.data["aptos"]["usd"];
       });
-    const transactionDetail = await client.getTransactionByHash(txnHash);
+    // const transactionDetail = await client.getTransactionByHash(txnHash);
     // const gasUsed = transactionDetail.gas_used;
     // const gasUnitPrice = transactionDetail.gas_unit_price;
-
     // const txfee = gasUsed * gasUnitPrice * Math.pow(10, -8);
     // data.txFee = txfee;
     // data.txFeeInUSD = APTOStoUSD * data.txFee;
-    // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+    console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
-    // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+    console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   }
   try {
     await uploadChoice(data);
@@ -257,7 +256,7 @@ async function main() {
     return;
   }
 
-  // run sendTx every 1 min.
+  // run sendTx every SEND_TX_INTERVAL
   const interval = eval(process.env.SEND_TX_INTERVAL);
   setInterval(() => {
     console.log(`sending tx...`);
