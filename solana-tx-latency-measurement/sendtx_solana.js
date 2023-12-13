@@ -203,6 +203,7 @@ async function sendZeroSol(){
     data.txFeeInUSD = SOLtoUSD * data.txFee
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
+    sendSlackMsg(`Faield to execute, ${err.toString()}`);
     console.log("failed to execute.", err.toString())
     data.error = err.toString()
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
