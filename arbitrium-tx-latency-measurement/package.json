@@ -8,6 +8,7 @@
   },
   "author": "",
   "license": "ISC",
+  "type": "module",
   "dependencies": {
     "@arbitrum/sdk": "^3.1.11",
     "@google-cloud/storage": "^6.0.0",
@@ -15,6 +16,7 @@
     "axios": "0.26.1",
     "coingecko-api": "1.0.10",
     "dotenv": "16.0.0",
+    "lowdb": "^6.1.1",
     "moment": "2.29.3",
     "parquetjs-lite": "0.8.7",
     "web3": "^4.1.2"
