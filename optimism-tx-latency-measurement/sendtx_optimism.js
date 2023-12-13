@@ -210,6 +210,15 @@ async function sendTx() {
           Number(web3.utils.fromWei(Number(receipt.effectiveGasPrice), "ether"));
       });
 
+    const db = await JSONPreset("db.json", { posts: [] });
+    db.data.posts.push({
+      l2TxHash: data.txhash,
+      createdAt: data.executedAt,
+      status: "pending",
+      l1CommitTiming: null,
+    });
+    db.write();
+
     // Calculate Transaction Fee and Get Tx Fee in USD
     var OPTtoUSD;
     await CoinGeckoClient.simple
@@ -224,6 +233,7 @@ async function sendTx() {
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
+    sendSlackMsg(`Faield to execute, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -235,8 +245,51 @@ async function sendTx() {
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
     );
-    console.log(JSON.stringify(data));
-    console.log("=======================================================");
+  }
+}
+
+async function l1Checker() {
+  await new Promise((resolve) => setTimeout(resolve, 1000 * 60 * 2));
+  const db = await JSONPreset("db.json", { posts: [] });
+  for (const post of db.data.posts) {
+    console.log(post.l2TxHash);
+    const currentTimestamp = new Date().getTime();
+    const fortyFiveMinutesAgoTimestamp = currentTimestamp - 1000 * 60 * 45;
+
+    if (post.status === "pending" && post.createdAt < fortyFiveMinutesAgoTimestamp) {
+      console.log(post.l2TxHash, "is pending");
+      await l1commitmentprocess(db, post.l2TxHash, post.createdAt);
+    }
+  }
+  await db.write();
+}
+
+async function l1commitmentprocess(db, hash, createdAt) {
+  const response = await fetch(`${(process.env.L1BASEURL}/root_end?from_chain=10&hash=${hash}`);
+  if (!response.ok) {
+    const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
+    if (postIndex !== -1) {
+      console.log("L1 tx hash not found");
+      db.data.posts[postIndex].status = "failed";
+      sendSlackMsg(`L1 tx hash not found for ${hash}!`);
+      return null;
+    } else {
+      sendSlackMsg(`l2 ${hash} not found!`);
+      return Error("l2TxHash not found.");
+    }
+  }
+  const data = await response.json();
+  const finalityTiming = parseInt(data.root_end, 10);
+  const timeTaken = finalityTiming - createdAt;
+
+  const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
+  if (postIndex !== -1) {
+    db.data.posts[postIndex].l1CommitTiming = timeTaken;
+    db.data.posts[postIndex].status = "success";
+    // ADD GOOGLE CLOUD STORAGE HERE
+  } else {
+    sendSlackMsg(`l2 ${hash} not found!`);
+    return Error("l2TxHash not found.");
   }
 }
 
@@ -258,6 +311,7 @@ async function main() {
   const interval = eval(process.env.SEND_TX_INTERVAL);
   setInterval(() => {
     sendTx();
+    l1Checker();
   }, interval);
 }
 
