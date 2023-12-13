@@ -220,14 +220,15 @@ async function sendTx() {
       .then((response) => {
         APTOStoUSD = response.data["aptos"]["usd"];
       });
-    // const transactionDetail = await client.getTransactionByHash(txnHash);
-    // const gasUsed = transactionDetail.gas_used;
-    // const gasUnitPrice = transactionDetail.gas_unit_price;
-    // const txfee = gasUsed * gasUnitPrice * Math.pow(10, -8);
-    // data.txFee = txfee;
-    // data.txFeeInUSD = APTOStoUSD * data.txFee;
-    console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+    const transactionDetail = await client.getTransactionByHash(txnHash);
+    const gasUsed = transactionDetail.gas_used;
+    const gasUnitPrice = transactionDetail.gas_unit_price;
+    const txfee = gasUsed * gasUnitPrice * Math.pow(10, -8);
+    data.txFee = txfee;
+    data.txFeeInUSD = APTOStoUSD * data.txFee;
+    // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
+    sendSlackMsg("failed to execute, " + err.toString());
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
