@@ -233,7 +233,7 @@ async function sendTx() {
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
-    sendSlackMsg(`Faield to execute, ${err.toString()}`);
+    sendSlackMsg(`Failed to execute, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -265,7 +265,7 @@ async function l1Checker() {
 }
 
 async function l1commitmentprocess(db, hash, createdAt) {
-  const response = await fetch(`${(process.env.L1BASEURL}/root_end?from_chain=10&hash=${hash}`);
+  const response = await fetch(`${process.env.L1BASEURL}/root_end?from_chain=10&hash=${hash}`);
   if (!response.ok) {
     const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
     if (postIndex !== -1) {
