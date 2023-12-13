@@ -1,0 +1,3 @@
+[submodule "go-finalityscraper"]
+	path = go-finalityscraper
+	url = https://github.com/khoa-klaytn/go-finalityscraper
