@@ -235,6 +235,8 @@ async function main (){
       setInterval(()=>{
       sendZeroSol();
   }, interval)
+  sendZeroSol();
+
 }
 
 main();

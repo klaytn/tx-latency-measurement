@@ -265,6 +265,7 @@ async function main(){
         setInterval(()=>{
         sendAvax("0.0", address);
     }, interval)
+    sendAvax("0.0", address);
 }
 
 main();

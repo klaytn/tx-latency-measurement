@@ -250,7 +250,7 @@ async function main(){
     setInterval(()=>{
       sendTx()
     }, interval)
-
+    sendTx()
 }
 
 main();

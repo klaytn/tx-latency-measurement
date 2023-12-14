@@ -314,6 +314,7 @@ async function main() {
     sendTx();
     l1Checker();
   }, interval);
+  sendTx();
 }
 
 main();

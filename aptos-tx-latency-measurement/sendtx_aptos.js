@@ -263,6 +263,7 @@ async function main() {
     console.log(`sending tx...`);
     sendTx();
   }, interval);
+  sendTx();
 }
 loadConfig();
 main();

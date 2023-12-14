@@ -236,7 +236,7 @@ async function main() {
     setInterval(()=>{
         sendTx()
     }, interval)
-
+    sendTx()
 }
 loadConfig()
 main()
