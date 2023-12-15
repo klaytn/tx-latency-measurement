@@ -162,8 +162,9 @@ async function sendTx(){
     const balance = Number(accountInfo.core_liquid_balance.split(' ')[0]); // in TNT(=Temporary Network Token (TNT))    
     if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_EOS))
     {
+      const now = new Date();
       //testnet : https://testnet.eos.io/blockchain-accounts/{accountId}
-      sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/blockchain-accounts/${accountId}|${accountId}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EOS} EOS! balance=${balance} EOS`)
+      sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/blockchain-accounts/${accountId}|${accountId}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EOS} EOS! balance=${balance} EOS`)
     }
     
     //not broadcast, sign transaction. 
@@ -208,7 +209,8 @@ async function sendTx(){
     data.txFeeInUSD = data.txFee * EOStoUSD 
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
-      sendSlackMsg(`failed to execute, ${err.toString()}`);
+       const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
       console.log("failed to execute.", err.toString())
       data.error = err.toString()
       console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

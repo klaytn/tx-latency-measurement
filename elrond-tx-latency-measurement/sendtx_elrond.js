@@ -145,7 +145,8 @@ async function sendTx(){
 
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_EGLD))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/accounts/${address.toString()}|${address.toString()}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EGLD} EGLD! balance=${balance} EGLD`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/accounts/${address.toString()}|${address.toString()}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EGLD} EGLD! balance=${balance} EGLD`)
         }
 
         const networkConfig = await networkProvider.getNetworkConfig();
@@ -233,7 +234,8 @@ async function sendTx(){
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
 
     } catch(err){
-        sendSlackMsg(`failed to execute, ${err.toString()}`);
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

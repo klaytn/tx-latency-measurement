@@ -142,8 +142,9 @@ async function sendSlackMsg(msg) {
 async function checkBalance(addr) {
   const balance = await client.getCoins({ owner: addr });
   if (parseFloat(balance) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_SUI)) {
+    const now = new Date();
     sendSlackMsg(
-      `Current balance of <${process.env.SCOPE_URL}/address/${addr}=${process.env.CHAIN_ID}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SUI} SUI! balance=${balance}`
+      `${now}, Current balance of <${process.env.SCOPE_URL}/address/${addr}=${process.env.CHAIN_ID}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SUI} SUI! balance=${balance}`
     );
   }
 }
@@ -238,7 +239,8 @@ async function sendTx() {
     data.txFeeInUSD = SUItoUSD * txfee;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
-    sendSlackMsg(`failed to execute, ${err.toString()}`);
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

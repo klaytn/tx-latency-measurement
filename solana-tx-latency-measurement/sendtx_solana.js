@@ -135,7 +135,8 @@ async function sendZeroSol(){
     const balance = await connection.getBalance(keypair.publicKey)
     if(balance*(10**(-9)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_SOL))
     {
-      sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${keypair.publicKey}?cluster=${process.env.CLUSTER_NAME}|${keypair.publicKey}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SOL} SOL! balance=${balance*(10**(-9))} SOL`)
+      const now = new Date();
+      sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${keypair.publicKey}?cluster=${process.env.CLUSTER_NAME}|${keypair.publicKey}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SOL} SOL! balance=${balance*(10**(-9))} SOL`)
     }
 
     const startGetBlockHash = new Date().getTime();
@@ -203,7 +204,8 @@ async function sendZeroSol(){
     data.txFeeInUSD = SOLtoUSD * data.txFee
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
-    sendSlackMsg(`failed to execute, ${err.toString()}`);
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
     console.log("failed to execute.", err.toString())
     data.error = err.toString()
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

@@ -146,7 +146,8 @@ async function sendTx(){
 
         if(balance.hbars.toBigNumber().toNumber() < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_HBAR))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${accountID}|${accountID}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_HBAR} HBAR! balance=${balance.hbars.toBigNumber().toNumber()} HBAR`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/account/${accountID}|${accountID}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_HBAR} HBAR! balance=${balance.hbars.toBigNumber().toNumber()} HBAR`)
         }
 
         // Create and sign transaction : https://github.com/hashgraph/hedera-sdk-js/blob/main/examples/sign-transaction.js
@@ -200,7 +201,8 @@ async function sendTx(){
         data.txFeeInUSD = data.txFee * HBARtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)    
     } catch(err){
-        sendSlackMsg(`failed to execute, ${err.toString()}`);
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

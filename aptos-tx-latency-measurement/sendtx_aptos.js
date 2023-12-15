@@ -181,8 +181,9 @@ async function sendTx() {
     const balance = await coinClient.checkBalance(account);
 
     if (balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_APTOS)) {
+      const now = new Date();
       sendSlackMsg(
-        `Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_APTOS} APTOS! balance=${balance} APTOS`
+        `${now}, Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_APTOS} APTOS! balance=${balance} APTOS`
       );
     }
 
@@ -228,7 +229,9 @@ async function sendTx() {
     data.txFeeInUSD = APTOStoUSD * data.txFee;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
-    sendSlackMsg(`failed to execute, ${err.toString()}`);
+
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);s
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

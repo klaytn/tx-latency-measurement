@@ -150,11 +150,10 @@ async function sendTx() {
     const signer = web3.eth.accounts.privateKeyToAccount(privateKey);
     const balance = Number(await web3.eth.getBalance(signer.address)) * 10 ** -18; //in wei
 
-    console.log(`Current balance of ${signer.address} is ${balance} OPT`);
-
     if (balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_OPT)) {
+      const now = new Date();
       sendSlackMsg(
-        `Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_OPT} OPT! balance=${balance} OPT`
+        `${now}, Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_OPT} OPT! balance=${balance} OPT`
       );
     }
 
@@ -235,7 +234,8 @@ async function sendTx() {
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
-    sendSlackMsg(`failed to execute, ${err.toString()}`);
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

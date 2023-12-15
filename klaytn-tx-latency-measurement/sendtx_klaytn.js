@@ -130,7 +130,7 @@ async function checkBalance(addr) {
     const balanceInKLAY = caver.utils.convertFromPeb(balance, 'KLAY')
 
     if(parseFloat(balanceInKLAY) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_KLAY)) {
-        sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${addr}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_KLAY} KLAY! balance=${balanceInKLAY}`)
+        sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/account/${addr}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_KLAY} KLAY! balance=${balanceInKLAY}`)
     }
 
 }
@@ -205,7 +205,8 @@ async function sendTx() {
         data.txFeeInUSD = KLAYtoUSD * data.txFee
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch (err) {
-        sendSlackMsg(`failed to execute, ${err.toString()}`);
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

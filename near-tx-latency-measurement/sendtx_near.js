@@ -154,7 +154,8 @@ async function sendTx() {
         const balance = Number(accountInfo.amount) * (10**(-24))
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_NEAR))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/accounts/${sender}|${sender}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_NEAR} NEAR! balance=${balance} NEAR`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/accounts/${sender}|${sender}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_NEAR} NEAR! balance=${balance} NEAR`)
         }
 
         // gets sender's public key
@@ -283,7 +284,8 @@ async function sendTx() {
         data.txFeeInUSD = data.txFee * NEARtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){
-        sendSlackMsg(`failed to execute, ${err.toString()}`);
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

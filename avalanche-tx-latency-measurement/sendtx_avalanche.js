@@ -163,7 +163,8 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         const balance = (await HTTPSProvider.getBalance(address)) * (10**(-18))// getAssetBalance
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_AVAX))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_AVAX} AVAX! balance=${balance} AVAX`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_AVAX} AVAX! balance=${balance} AVAX`)
         }
 
         const latestNonce = await HTTPSProvider.getTransactionCount(address);
@@ -231,7 +232,8 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         data.txFeeInUSD = data.txFee  * AVAXtoUSD;
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){
-        sendSlackMsg(`failed to execute, ${err.toString()}`);
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
