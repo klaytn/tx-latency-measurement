@@ -222,14 +222,13 @@ async function sendTx() {
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var OPTtoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["optimism"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        OPTtoUSD = response.data["optimism"]["usd"];
+
+      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=optimism&vs_currencies=usd`)
+      .then(response => {
+        OPTtoUSD = response.data["optimism"].usd;
       });
+
+
     data.txFeeInUSD = data.txFee * OPTtoUSD;
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

@@ -200,12 +200,12 @@ async function sendTx(){
     // Calculate CPU fee and CPU fee in USD 
     data.txFee = cpuPrice * result.processed.receipt.cpu_usage_us;
     var EOStoUSD;
-    await CoinGeckoClient.simple.price({
-      ids: ["eos"],
-      vs_currencies: ["usd"]
-    }).then((response)=>{
-      EOStoUSD = response.data["eos"]["usd"]
-    })
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=eos&vs_currencies=usd`)
+    .then(response => {
+      EOStoUSD = response.data["eos"].usd;
+    });
+
     data.txFeeInUSD = data.txFee * EOStoUSD 
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){

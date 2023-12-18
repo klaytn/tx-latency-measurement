@@ -228,12 +228,11 @@ async function sendTx(){
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var MATICtoUSD;
-    await CoinGeckoClient.simple.price({
-      ids: ["matic-network"],
-      vs_currencies: ["usd"]
-    }).then((response)=>{
-      MATICtoUSD = response.data["matic-network"]["usd"]
-    })
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=usd`)
+    .then(response => {
+      MATICtoUSD = response.data["matic-network"].usd;
+    });
     data.txFeeInUSD = data.txFee * MATICtoUSD
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

@@ -223,14 +223,10 @@ async function sendTx() {
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var ARBtoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["arbitrum"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        ARBtoUSD = response.data["arbitrum"]["usd"];
-      });
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=arbitrum&vs_currencies=usd`)
+    .then(response => {
+      ARBtoUSD = response.data["arbitrum"].usd;
+    });
     data.txFeeInUSD = data.txFee * ARBtoUSD;
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

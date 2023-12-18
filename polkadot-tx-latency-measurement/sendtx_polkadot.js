@@ -206,12 +206,12 @@ async function sendTx(){
 
                 //Calculate txFee in USD
                 var DOTtoUSD;
-                await CoinGeckoClient.simple.price({
-                    ids: ["polkadot"],
-                    vs_currencies: ["usd"]
-                }).then((response)=>{
-                    DOTtoUSD = response.data["polkadot"]["usd"]
-                })
+
+                await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=polkadot&vs_currencies=usd`)
+                .then(response => {
+                    DOTtoUSD = response.data["polkadot"].usd;
+                });
+
                 data.txFeeInUSD = data.txFee * DOTtoUSD
                 console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
                 await uploadChoice(data);

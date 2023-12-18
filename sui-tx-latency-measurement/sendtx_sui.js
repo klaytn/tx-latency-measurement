@@ -227,14 +227,12 @@ async function sendTx() {
     txfee = totalFeeinMist / Math.pow(10, 9);
 
     var SUItoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["sui"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        SUItoUSD = response.data["sui"]["usd"];
+
+      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd`)
+      .then(response => {
+        SUItoUSD = response.data["sui"].usd;
       });
+
     data.txFee = 1997880 / Math.pow(10, 9);
     data.txFeeInUSD = SUItoUSD * txfee;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

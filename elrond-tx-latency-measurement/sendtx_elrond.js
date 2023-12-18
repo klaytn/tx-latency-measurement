@@ -224,12 +224,11 @@ async function sendTx(){
 
         // Calculate Transaction Fee and Get Tx Fee in USD 
         var EGLDtoUSD; 
-        await CoinGeckoClient.simple.price({
-            ids: ["elrond-erd-2"],
-            vs_currencies: ["usd"]
-        }).then((response)=>{
-            EGLDtoUSD = response.data["elrond-erd-2"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=elrond-erd-2&vs_currencies=usd`)
+        .then(response => {
+            EGLDtoUSD = response.data["elrond-erd-2"].usd;
+        });
         data.txFeeInUSD = data.txFee * EGLDtoUSD 
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
 

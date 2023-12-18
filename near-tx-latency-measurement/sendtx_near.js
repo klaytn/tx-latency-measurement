@@ -275,12 +275,12 @@ async function sendTx() {
         //calculate TxFee and TxFee in USD
         data.txFee = (Number(result.transaction_outcome.outcome.tokens_burnt) + Number(result.receipts_outcome[0].outcome.tokens_burnt))*(10**(-24))
         var NEARtoUSD;
-        await CoinGeckoClient.simple.price({
-          ids: ["near"],
-          vs_currencies: ["usd"]
-        }).then((response)=>{
-            NEARtoUSD = response.data["near"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=near&vs_currencies=usd`)
+        .then(response => {
+            NEARtoUSD = response.data["near"].usd;
+        });
+
         data.txFeeInUSD = data.txFee * NEARtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){

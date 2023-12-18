@@ -187,12 +187,11 @@ async function sendZeroSol(){
     data.txhash = signature // same with base58.encode(tx.signature)
 
     var SOLtoUSD;
-    await CoinGeckoClient.simple.price({
-      ids: ['solana'],
-      vs_currencies: ['usd']
-    }).then((response)=>{
-      SOLtoUSD = response.data['solana']['usd']
-    })
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd`)
+    .then(response => {
+      SOLtoUSD = response.data["solana"].usd;
+    });
 
     const response = await connection.getFeeForMessage(
       tx.compileMessage(),

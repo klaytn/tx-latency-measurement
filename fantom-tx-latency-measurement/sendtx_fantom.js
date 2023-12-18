@@ -211,12 +211,12 @@ async function sendTx(){
 
         // Calculate Transaction Fee and Get Tx Fee in USD
         var FTMtoUSD;
-        await CoinGeckoClient.simple.price({
-            ids: ["fantom"],
-            vs_currencies: ["usd"]
-        }).then((response)=>{
-            FTMtoUSD = response.data["fantom"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=fantom&vs_currencies=usd`)
+        .then(response => {
+            FTMtoUSD = response.data["fantom"].usd;
+        });
+
         data.txFeeInUSD = data.txFee * FTMtoUSD
 
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

@@ -192,12 +192,12 @@ async function sendTx(){
 
         // Calculate Transaction Fee and Get Tx Fee in USD 
         var HBARtoUSD; 
-        await CoinGeckoClient.simple.price({
-            ids: ["hedera-hashgraph"],
-            vs_currencies: ["usd"]
-        }).then((response)=>{
-            HBARtoUSD = response.data["hedera-hashgraph"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd`)
+        .then(response => {
+            HBARtoUSD = response.data["hedera-hashgraph"].usd;
+        });
+
         data.txFeeInUSD = data.txFee * HBARtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)    
     } catch(err){

@@ -195,12 +195,12 @@ async function sendTx() {
         data.latency = end-start
 
         var KLAYtoUSD;
-        await CoinGeckoClient.simple.price({
-            ids: ['klay-token'],
-            vs_currencies:['usd']
-        }).then((response)=> {
-            KLAYtoUSD = response.data['klay-token']['usd']
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=klay-token&vs_currencies=usd`)
+        .then(response => {
+            KLAYtoUSD = response.data["klay-token"].usd;
+        });
+
         data.txFee = caver.utils.convertFromPeb(receipt.gasPrice, 'KLAY') * receipt.gasUsed
         data.txFeeInUSD = KLAYtoUSD * data.txFee
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

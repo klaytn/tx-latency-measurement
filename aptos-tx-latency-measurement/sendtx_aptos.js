@@ -213,14 +213,12 @@ async function sendTx() {
     data.chainId = process.env.CHAIN_ID;
 
     var APTOStoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["aptos"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        APTOStoUSD = response.data["aptos"]["usd"];
-      });
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=aptos&vs_currencies=usd`)
+    .then(response => {
+      APTOStoUSD = response.data["aptos"].usd;
+    });
+
     const transactionDetail = await client.getTransactionByHash(txnHash);
     const gasUsed = transactionDetail.gas_used;
     const gasUnitPrice = transactionDetail.gas_unit_price;

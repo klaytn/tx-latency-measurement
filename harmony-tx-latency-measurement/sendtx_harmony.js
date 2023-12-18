@@ -212,14 +212,12 @@ async function sendTx() {
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var ONEtoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["harmony"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        ONEtoUSD = response.data["harmony"]["usd"];
+
+      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=harmony&vs_currencies=usd`)
+      .then(response => {
+        ONEtoUSD = response.data["harmony"].usd;
       });
+
     data.txFeeInUSD = data.txFee * ONEtoUSD;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
