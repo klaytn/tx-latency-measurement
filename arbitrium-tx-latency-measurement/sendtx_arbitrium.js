@@ -223,7 +223,7 @@ async function sendTx() {
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var ARBtoUSD;
-    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=arbitrum&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=arbitrum&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
     .then(response => {
       ARBtoUSD = response.data["arbitrum"].usd;
     });

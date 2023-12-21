@@ -201,7 +201,7 @@ async function sendTx(){
     data.txFee = cpuPrice * result.processed.receipt.cpu_usage_us;
     var EOStoUSD;
 
-    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=eos&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=eos&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
     .then(response => {
       EOStoUSD = response.data["eos"].usd;
     });
