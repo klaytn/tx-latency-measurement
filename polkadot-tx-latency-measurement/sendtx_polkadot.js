@@ -207,7 +207,7 @@ async function sendTx(){
                 //Calculate txFee in USD
                 var DOTtoUSD;
 
-                await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=polkadot&vs_currencies=usd`)
+                await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=polkadot&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
                 .then(response => {
                     DOTtoUSD = response.data["polkadot"].usd;
                 });

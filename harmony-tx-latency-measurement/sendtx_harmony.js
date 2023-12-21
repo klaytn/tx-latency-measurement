@@ -213,7 +213,7 @@ async function sendTx() {
     // Calculate Transaction Fee and Get Tx Fee in USD
     var ONEtoUSD;
 
-      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=harmony&vs_currencies=usd`)
+      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=harmony&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
       .then(response => {
         ONEtoUSD = response.data["harmony"].usd;
       });

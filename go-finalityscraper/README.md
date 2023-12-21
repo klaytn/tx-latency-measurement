@@ -12,8 +12,6 @@ Web Scraper to determine finality & latency between L2 & L1 blockchains, impleme
 Clone
 
 ```sh
-git clone https://github.com/khoa-klaytn/go-finalityscraper.git
-# Complete .env
 cp .env.example .env
 ```
 

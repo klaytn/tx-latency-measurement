@@ -225,7 +225,7 @@ async function sendTx(){
         // Calculate Transaction Fee and Get Tx Fee in USD 
         var EGLDtoUSD; 
 
-        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=elrond-erd-2&vs_currencies=usd`)
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=elrond-erd-2&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
         .then(response => {
             EGLDtoUSD = response.data["elrond-erd-2"].usd;
         });

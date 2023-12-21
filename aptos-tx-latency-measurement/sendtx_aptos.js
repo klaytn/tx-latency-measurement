@@ -214,7 +214,7 @@ async function sendTx() {
 
     var APTOStoUSD;
 
-    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=aptos&vs_currencies=usd`)
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=aptos&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
     .then(response => {
       APTOStoUSD = response.data["aptos"].usd;
     });

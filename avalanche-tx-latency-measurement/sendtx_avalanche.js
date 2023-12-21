@@ -223,7 +223,7 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         // Get tx Fee and tx Fee in USD
         var AVAXtoUSD;
 
-        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd`)
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
         .then(response => {
             AVAXtoUSD = response.data["avalanche-2"].usd;
         });

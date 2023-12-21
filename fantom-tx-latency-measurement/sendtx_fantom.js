@@ -212,7 +212,7 @@ async function sendTx(){
         // Calculate Transaction Fee and Get Tx Fee in USD
         var FTMtoUSD;
 
-        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=fantom&vs_currencies=usd`)
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=fantom&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
         .then(response => {
             FTMtoUSD = response.data["fantom"].usd;
         });

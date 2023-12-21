@@ -276,7 +276,7 @@ async function sendTx() {
         data.txFee = (Number(result.transaction_outcome.outcome.tokens_burnt) + Number(result.receipts_outcome[0].outcome.tokens_burnt))*(10**(-24))
         var NEARtoUSD;
 
-        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=near&vs_currencies=usd`)
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=near&vs_currencies=usd&x_cg_demo_api_key=CG-LscxntjGbQbPodCVcNfPVTtY`)
         .then(response => {
             NEARtoUSD = response.data["near"].usd;
         });
