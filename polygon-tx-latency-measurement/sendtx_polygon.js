@@ -238,7 +238,7 @@ async function sendTx(){
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
      const now = new Date();
-    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
+    sendSlackMsg(`${now}, failed to execute polygon, ${err.toString()}`);
     console.log("failed to execute.", err.toString())
     data.error = err.toString()
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -246,6 +246,7 @@ async function sendTx(){
   try{
       await uploadChoice(data)
   } catch(err){
+    sendSlackMsg(`failed to upload polygon, ${err.toString()}`);
       console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
       console.log(JSON.stringify(data))
   }

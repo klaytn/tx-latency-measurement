@@ -232,7 +232,7 @@ async function sendTx() {
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
      const now = new Date();
-    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
+    sendSlackMsg(`${now}, failed to execute arbitrum, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -240,6 +240,8 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
+    sendSlackMsg(`${now}, failed to upload arbitrium, ${err.toString()}`);
+
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
@@ -264,16 +266,16 @@ async function l1Checker() {
 }
 
 async function l1commitmentprocess(db, hash, createdAt) {
-  const response = await fetch(`${process.env.L1BASEURL}/root_end?from_chain=42161&hash=${hash}`);
+  const response = await fetch(`${process.env.L1FINALITYSCRAPERURL}/root_end?from_chain=42161&hash=${hash}`);
   if (!response.ok) {
     const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
     if (postIndex !== -1) {
       console.log("L1 tx hash not found");
       db.data.posts[postIndex].status = "failed";
-      sendSlackMsg(`L1 tx hash not found for ${hash}!`);
+      sendSlackMsg(`L1 tx hash not found for ${hash} in Arbitrium!`);
       return null;
     } else {
-      sendSlackMsg(`l2 ${hash} not found!`);
+      sendSlackMsg(`l2 ${hash} not found in Arbitrium!`);
       return Error("l2TxHash not found.");
     }
   }
@@ -286,7 +288,7 @@ async function l1commitmentprocess(db, hash, createdAt) {
     db.data.posts[postIndex].l1CommitTiming = timeTaken;
     db.data.posts[postIndex].status = "success";
   } else {
-    sendL1FailedSlackMsg(`l2 ${hash} not found!`);
+    sendL1FailedSlackMsg(`l2 ${hash} not found! in Arbitrium!`);
     return Error("l2TxHash not found.");
   }
 }
