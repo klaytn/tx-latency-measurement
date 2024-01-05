@@ -220,7 +220,7 @@ async function sendTx(){
         })
     } catch(err){
          const now = new Date();
-    sendSlackMsg(`${now}, failed to execute, ${err.toString()}`);
+    sendSlackMsg(`${now}, failed to execute polkadot, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)

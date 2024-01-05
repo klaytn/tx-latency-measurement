@@ -119,6 +119,36 @@ async function uploadToGCS(data) {
   fs.unlinkSync(filename);
 }
 
+async function uploadToGCSL1(data) {
+  if (
+    process.env.GCP_PROJECT_ID_L1 === "" ||
+    process.env.GCP_KEY_FILE_PATH_L1 === "" ||
+    process.env.GCP_BUCKET_L1 === ""
+  ) {
+    throw "undefined parameters";
+  }
+
+  const storage = new Storage({
+    projectId: process.env.GCP_PROJECT_ID_L1,
+    keyFilename: process.env.GCP_KEY_FILE_PATH_L1,
+  });
+
+  const filename = await makeParquetFile(data);
+  const destFileName = `tx-latency-measurement/arbitriuml1/${filename}`;
+
+  async function uploadFile() {
+    const options = {
+      destination: destFileName,
+    };
+
+    await storage.bucket(process.env.GCP_BUCKET_L1).upload(filename, options);
+    console.log(`${filename} uploaded to ${process.env.GCP_BUCKET_L1}`);
+  }
+
+  await uploadFile().catch(console.error);
+  fs.unlinkSync(filename);
+}
+
 async function uploadChoice(data) {
   if (process.env.UPLOAD_METHOD === "AWS") {
     await uploadToS3(data);
@@ -266,6 +296,22 @@ async function l1Checker() {
 }
 
 async function l1commitmentprocess(db, hash, createdAt) {
+
+  var data = {
+    executedAt: new Date().getTime(),
+    txhash: "",
+    startTime: 0,
+    endTime: 0,
+    chainId: 0,
+    latency: 0,
+    error: "",
+    txFee: 0.0,
+    txFeeInUSD: 0.0,
+    resourceUsedOfLatestBlock: 0,
+    numOfTxInLatestBlock: 0,
+    pingTime: 0,
+  };
+
   const response = await fetch(`${process.env.L1FINALITYSCRAPERURL}/root_end?from_chain=42161&hash=${hash}`);
   if (!response.ok) {
     const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
@@ -287,6 +333,9 @@ async function l1commitmentprocess(db, hash, createdAt) {
   if (postIndex !== -1) {
     db.data.posts[postIndex].l1CommitTiming = timeTaken;
     db.data.posts[postIndex].status = "success";
+    data.latency = timeTaken;
+    data.hash = hash;
+    uploadToGCSL1(data)
   } else {
     sendL1FailedSlackMsg(`l2 ${hash} not found! in Arbitrium!`);
     return Error("l2TxHash not found.");
