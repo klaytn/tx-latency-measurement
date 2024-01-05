@@ -146,7 +146,8 @@ async function sendTx(){
 
         if(balance.hbars.toBigNumber().toNumber() < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_HBAR))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${accountID}|${accountID}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_HBAR} HBAR! balance=${balance.hbars.toBigNumber().toNumber()} HBAR`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/account/${accountID}|${accountID}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_HBAR} HBAR! balance=${balance.hbars.toBigNumber().toNumber()} HBAR`)
         }
 
         // Create and sign transaction : https://github.com/hashgraph/hedera-sdk-js/blob/main/examples/sign-transaction.js
@@ -191,15 +192,17 @@ async function sendTx(){
 
         // Calculate Transaction Fee and Get Tx Fee in USD 
         var HBARtoUSD; 
-        await CoinGeckoClient.simple.price({
-            ids: ["hedera-hashgraph"],
-            vs_currencies: ["usd"]
-        }).then((response)=>{
-            HBARtoUSD = response.data["hedera-hashgraph"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+        .then(response => {
+            HBARtoUSD = response.data["hedera-hashgraph"].usd;
+        });
+
         data.txFeeInUSD = data.txFee * HBARtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)    
     } catch(err){
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute hedera, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -207,6 +210,7 @@ async function sendTx(){
     try{
         await uploadChoice(data)
     } catch(err) {
+        sendSlackMsg(`failed to upload hedera, ${err.toString()}`);
         console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS' ? 's3' : 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
@@ -230,6 +234,7 @@ async function main(){
     setInterval(()=>{
       sendTx()
     }, interval)
+    sendTx()
 }
 
 main();

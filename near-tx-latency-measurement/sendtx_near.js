@@ -154,7 +154,8 @@ async function sendTx() {
         const balance = Number(accountInfo.amount) * (10**(-24))
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_NEAR))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/accounts/${sender}|${sender}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_NEAR} NEAR! balance=${balance} NEAR`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/accounts/${sender}|${sender}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_NEAR} NEAR! balance=${balance} NEAR`)
         }
 
         // gets sender's public key
@@ -274,15 +275,17 @@ async function sendTx() {
         //calculate TxFee and TxFee in USD
         data.txFee = (Number(result.transaction_outcome.outcome.tokens_burnt) + Number(result.receipts_outcome[0].outcome.tokens_burnt))*(10**(-24))
         var NEARtoUSD;
-        await CoinGeckoClient.simple.price({
-          ids: ["near"],
-          vs_currencies: ["usd"]
-        }).then((response)=>{
-            NEARtoUSD = response.data["near"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=near&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+        .then(response => {
+            NEARtoUSD = response.data["near"].usd;
+        });
+
         data.txFeeInUSD = data.txFee * NEARtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute Near, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -290,6 +293,7 @@ async function sendTx() {
     try{
         await uploadChoice(data)
     } catch(err){
+        sendSlackMsg(`failed to upload Near, ${err.toString()}`);
         console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
@@ -313,6 +317,7 @@ async function main (){
         setInterval(()=>{
         sendTx();
     }, interval)
+    sendTx()
 }
   
 

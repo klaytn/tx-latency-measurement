@@ -135,7 +135,8 @@ async function sendZeroSol(){
     const balance = await connection.getBalance(keypair.publicKey)
     if(balance*(10**(-9)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_SOL))
     {
-      sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${keypair.publicKey}?cluster=${process.env.CLUSTER_NAME}|${keypair.publicKey}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SOL} SOL! balance=${balance*(10**(-9))} SOL`)
+      const now = new Date();
+      sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${keypair.publicKey}?cluster=${process.env.CLUSTER_NAME}|${keypair.publicKey}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SOL} SOL! balance=${balance*(10**(-9))} SOL`)
     }
 
     const startGetBlockHash = new Date().getTime();
@@ -186,12 +187,11 @@ async function sendZeroSol(){
     data.txhash = signature // same with base58.encode(tx.signature)
 
     var SOLtoUSD;
-    await CoinGeckoClient.simple.price({
-      ids: ['solana'],
-      vs_currencies: ['usd']
-    }).then((response)=>{
-      SOLtoUSD = response.data['solana']['usd']
-    })
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+    .then(response => {
+      SOLtoUSD = response.data["solana"].usd;
+    });
 
     const response = await connection.getFeeForMessage(
       tx.compileMessage(),
@@ -203,6 +203,8 @@ async function sendZeroSol(){
     data.txFeeInUSD = SOLtoUSD * data.txFee
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute solana, ${err.toString()}`);
     console.log("failed to execute.", err.toString())
     data.error = err.toString()
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -210,6 +212,7 @@ async function sendZeroSol(){
   try{
     await uploadChoice(data)
   } catch(err){
+    sendSlackMsg(`failed to upload solana, ${err.toString()}`);
     console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
     console.log(JSON.stringify(data))
   }
@@ -234,6 +237,8 @@ async function main (){
       setInterval(()=>{
       sendZeroSol();
   }, interval)
+  sendZeroSol();
+
 }
 
 main();

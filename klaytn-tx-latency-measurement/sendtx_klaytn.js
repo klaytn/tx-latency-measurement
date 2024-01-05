@@ -130,7 +130,7 @@ async function checkBalance(addr) {
     const balanceInKLAY = caver.utils.convertFromPeb(balance, 'KLAY')
 
     if(parseFloat(balanceInKLAY) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_KLAY)) {
-        sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${addr}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_KLAY} KLAY! balance=${balanceInKLAY}`)
+        sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/account/${addr}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_KLAY} KLAY! balance=${balanceInKLAY}`)
     }
 
 }
@@ -195,16 +195,18 @@ async function sendTx() {
         data.latency = end-start
 
         var KLAYtoUSD;
-        await CoinGeckoClient.simple.price({
-            ids: ['klay-token'],
-            vs_currencies:['usd']
-        }).then((response)=> {
-            KLAYtoUSD = response.data['klay-token']['usd']
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=klay-token&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+        .then(response => {
+            KLAYtoUSD = response.data["klay-token"].usd;
+        });
+
         data.txFee = caver.utils.convertFromPeb(receipt.gasPrice, 'KLAY') * receipt.gasUsed
         data.txFeeInUSD = KLAYtoUSD * data.txFee
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch (err) {
+         const now = new Date();
+        sendSlackMsg(`${now}, failed to execute Klaytn, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -212,6 +214,7 @@ async function sendTx() {
     try{
         await uploadChoice(data)
     } catch(err){
+        sendSlackMsg(`failed to upload Klaytn, ${err.toString()}`);
         console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
@@ -235,7 +238,7 @@ async function main() {
     setInterval(()=>{
         sendTx()
     }, interval)
-
+    sendTx()
 }
 loadConfig()
 main()

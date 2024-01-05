@@ -157,7 +157,8 @@ async function sendTx(){
 
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_DOT))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/account/${senderAddress}|${senderAddress}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_DOT} DOT! balance=${balance} DOT`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/account/${senderAddress}|${senderAddress}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_DOT} DOT! balance=${balance} DOT`)
         }
 
         const startGetBlock = new Date().getTime()
@@ -205,12 +206,12 @@ async function sendTx(){
 
                 //Calculate txFee in USD
                 var DOTtoUSD;
-                await CoinGeckoClient.simple.price({
-                    ids: ["polkadot"],
-                    vs_currencies: ["usd"]
-                }).then((response)=>{
-                    DOTtoUSD = response.data["polkadot"]["usd"]
-                })
+
+                await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=polkadot&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+                .then(response => {
+                    DOTtoUSD = response.data["polkadot"].usd;
+                });
+
                 data.txFeeInUSD = data.txFee * DOTtoUSD
                 console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
                 await uploadChoice(data);
@@ -218,6 +219,8 @@ async function sendTx(){
             }
         })
     } catch(err){
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute polkadot, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -245,6 +248,7 @@ async function main(){
     setInterval(()=>{
         sendTx()
     }, interval)
+    sendTx()
 }
 
 main();

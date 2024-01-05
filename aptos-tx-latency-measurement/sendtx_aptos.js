@@ -181,8 +181,9 @@ async function sendTx() {
     const balance = await coinClient.checkBalance(account);
 
     if (balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_APTOS)) {
+      const now = new Date();
       sendSlackMsg(
-        `Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_APTOS} APTOS! balance=${balance} APTOS`
+        `${now}, Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_APTOS} APTOS! balance=${balance} APTOS`
       );
     }
 
@@ -212,14 +213,12 @@ async function sendTx() {
     data.chainId = process.env.CHAIN_ID;
 
     var APTOStoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["aptos"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        APTOStoUSD = response.data["aptos"]["usd"];
-      });
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=aptos&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+    .then(response => {
+      APTOStoUSD = response.data["aptos"].usd;
+    });
+
     const transactionDetail = await client.getTransactionByHash(txnHash);
     const gasUsed = transactionDetail.gas_used;
     const gasUnitPrice = transactionDetail.gas_unit_price;
@@ -228,7 +227,9 @@ async function sendTx() {
     data.txFeeInUSD = APTOStoUSD * data.txFee;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
-    sendSlackMsg("failed to execute, " + err.toString());
+
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute aptos, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -236,6 +237,7 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
+    sendSlackMsg(`${now}, failed to upload aptos, ${err.toString()}`);
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
@@ -263,6 +265,7 @@ async function main() {
     console.log(`sending tx...`);
     sendTx();
   }, interval);
+  sendTx();
 }
 loadConfig();
 main();
