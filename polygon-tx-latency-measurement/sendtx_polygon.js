@@ -146,7 +146,8 @@ async function sendTx(){
 
     if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_MATIC))
     {
-      sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_MATIC} MATIC! balance=${balance} MATIC`)
+      const now = new Date();
+      sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_MATIC} MATIC! balance=${balance} MATIC`)
     }
 
     const latestNonce = Number(await web3.eth.getTransactionCount(signer.address, 'pending'))
@@ -227,16 +228,17 @@ async function sendTx(){
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var MATICtoUSD;
-    await CoinGeckoClient.simple.price({
-      ids: ["matic-network"],
-      vs_currencies: ["usd"]
-    }).then((response)=>{
-      MATICtoUSD = response.data["matic-network"]["usd"]
-    })
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+    .then(response => {
+      MATICtoUSD = response.data["matic-network"].usd;
+    });
     data.txFeeInUSD = data.txFee * MATICtoUSD
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute polygon, ${err.toString()}`);
     console.log("failed to execute.", err.toString())
     data.error = err.toString()
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -244,6 +246,7 @@ async function sendTx(){
   try{
       await uploadChoice(data)
   } catch(err){
+    sendSlackMsg(`failed to upload polygon, ${err.toString()}`);
       console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
       console.log(JSON.stringify(data))
   }
@@ -266,7 +269,7 @@ async function main(){
   setInterval(()=>{
     sendTx()
   }, interval)
-
+  sendTx()
 }
 
 main();

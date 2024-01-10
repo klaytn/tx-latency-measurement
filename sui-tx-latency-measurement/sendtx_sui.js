@@ -142,8 +142,9 @@ async function sendSlackMsg(msg) {
 async function checkBalance(addr) {
   const balance = await client.getCoins({ owner: addr });
   if (parseFloat(balance) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_SUI)) {
+    const now = new Date();
     sendSlackMsg(
-      `Current balance of <${process.env.SCOPE_URL}/address/${addr}=${process.env.CHAIN_ID}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SUI} SUI! balance=${balance}`
+      `${now}, Current balance of <${process.env.SCOPE_URL}/address/${addr}=${process.env.CHAIN_ID}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SUI} SUI! balance=${balance}`
     );
   }
 }
@@ -226,18 +227,18 @@ async function sendTx() {
     txfee = totalFeeinMist / Math.pow(10, 9);
 
     var SUItoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["sui"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        SUItoUSD = response.data["sui"]["usd"];
+
+      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=sui&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+      .then(response => {
+        SUItoUSD = response.data["sui"].usd;
       });
+
     data.txFee = 1997880 / Math.pow(10, 9);
     data.txFeeInUSD = SUItoUSD * txfee;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute sui, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -245,6 +246,7 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
+    sendSlackMsg(`failed to upload sui, ${err.toString()}`);
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
@@ -270,6 +272,7 @@ async function main() {
   setInterval(() => {
     sendTx();
   }, interval);
+  sendTx();
 }
 loadConfig();
 main();

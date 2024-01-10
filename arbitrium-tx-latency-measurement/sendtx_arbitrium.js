@@ -1,14 +1,16 @@
 // Arbitrium PoS transaction latency measurement.
 
-const { Web3 } = require("web3");
-const fs = require("fs");
-const AWS = require("aws-sdk");
-const parquet = require("parquetjs-lite");
-const moment = require("moment");
-const axios = require("axios");
-const CoinGecko = require("coingecko-api");
-const { Storage } = require("@google-cloud/storage");
-require("dotenv").config();
+import "dotenv/config";
+
+import { Web3 } from "web3";
+import fs from "fs";
+import AWS from "aws-sdk";
+import parquet from "parquetjs-lite";
+import moment from "moment";
+import axios from "axios";
+import CoinGecko from "coingecko-api";
+import { Storage } from "@google-cloud/storage";
+import { JSONPreset } from "lowdb/node";
 
 let rpc = process.env.PUBLIC_RPC_URL;
 const provider = new Web3.providers.HttpProvider(rpc);
@@ -117,6 +119,36 @@ async function uploadToGCS(data) {
   fs.unlinkSync(filename);
 }
 
+async function uploadToGCSL1(data) {
+  if (
+    process.env.GCP_PROJECT_ID === "" ||
+    process.env.GCP_KEY_FILE_PATH === "" ||
+    process.env.GCP_BUCKET === ""
+  ) {
+    throw "undefined parameters";
+  }
+
+  const storage = new Storage({
+    projectId: process.env.GCP_PROJECT_ID,
+    keyFilename: process.env.GCP_KEY_FILE_PATH,
+  });
+
+  const filename = await makeParquetFile(data);
+  const destFileName = `tx-latency-measurement/arbitriuml1/${filename}`;
+
+  async function uploadFile() {
+    const options = {
+      destination: destFileName,
+    };
+
+    await storage.bucket(process.env.GCP_BUCKET).upload(filename, options);
+    console.log(`${filename} uploaded to ${process.env.GCP_BUCKET}`);
+  }
+
+  await uploadFile().catch(console.error);
+  fs.unlinkSync(filename);
+}
+
 async function uploadChoice(data) {
   if (process.env.UPLOAD_METHOD === "AWS") {
     await uploadToS3(data);
@@ -148,10 +180,10 @@ async function sendTx() {
     const signer = web3.eth.accounts.privateKeyToAccount(privateKey);
     const balance = Number(await web3.eth.getBalance(signer.address)) * 10 ** -18; //in wei
 
-    console.log(`Current balance of ${signer.address} is ${balance} ARB`);
     if (balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_ARB)) {
+      const now = new Date();
       sendSlackMsg(
-        `Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_ARB} ARB! balance=${balance} ARB`
+        `${now}, Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_ARB} ARB! balance=${balance} ARB`
       );
     }
 
@@ -210,20 +242,27 @@ async function sendTx() {
       })
       .catch(console.error);
 
+    const db = await JSONPreset("db.json", { posts: [] });
+    db.data.posts.push({
+      l2TxHash: data.txhash,
+      createdAt: data.executedAt,
+      status: "pending",
+      l1CommitTiming: null,
+    });
+    db.write();
+
     // Calculate Transaction Fee and Get Tx Fee in USD
     var ARBtoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["arbitrum"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        ARBtoUSD = response.data["arbitrum"]["usd"];
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=arbitrum&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+      .then(response => {
+        ARBtoUSD = response.data["arbitrum"].usd;
       });
     data.txFeeInUSD = data.txFee * ARBtoUSD;
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
+    const now = new Date();
+    sendSlackMsg(`${now}, failed to execute arbitrum, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -231,12 +270,75 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
+    sendSlackMsg(`${now}, failed to upload arbitrium, ${err.toString()}`);
+
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
     );
-    console.log(JSON.stringify(data));
-    console.log("=======================================================");
+  }
+}
+
+async function l1Checker() {
+  await new Promise((resolve) => setTimeout(resolve, 1000 * 60 * 2));
+  const db = await JSONPreset("db.json", { posts: [] });
+  for (const post of db.data.posts) {
+    console.log(post.l2TxHash);
+    const currentTimestamp = new Date().getTime();
+    const fortyFiveMinutesAgoTimestamp = currentTimestamp - 1000 * 60 * 45;
+
+    if (post.status === "pending" && post.createdAt < fortyFiveMinutesAgoTimestamp) {
+      console.log(post.l2TxHash, "is pending");
+      await l1commitmentprocess(db, post.l2TxHash, post.createdAt);
+    }
+  }
+  await db.write();
+}
+
+async function l1commitmentprocess(db, hash, createdAt) {
+
+  var data = {
+    executedAt: new Date().getTime(),
+    txhash: "",
+    startTime: 0,
+    endTime: 0,
+    chainId: 0,
+    latency: 0,
+    error: "",
+    txFee: 0.0,
+    txFeeInUSD: 0.0,
+    resourceUsedOfLatestBlock: 0,
+    numOfTxInLatestBlock: 0,
+    pingTime: 0,
+  };
+
+  const response = await fetch(`${process.env.L1FINALITYSCRAPERURL}/root_end?from_chain=42161&hash=${hash}`);
+  if (!response.ok) {
+    const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
+    if (postIndex !== -1) {
+      console.log("L1 tx hash not found");
+      db.data.posts[postIndex].status = "failed";
+      sendSlackMsg(`L1 tx hash not found for ${hash} in Arbitrium!`);
+      return null;
+    } else {
+      sendSlackMsg(`l2 ${hash} not found in Arbitrium!`);
+      return Error("l2TxHash not found.");
+    }
+  }
+  const data = await response.json();
+  const finalityTiming = parseInt(data.root_end, 10);
+  const timeTaken = finalityTiming - createdAt;
+
+  const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
+  if (postIndex !== -1) {
+    db.data.posts[postIndex].l1CommitTiming = timeTaken;
+    db.data.posts[postIndex].status = "success";
+    data.latency = timeTaken;
+    data.hash = hash;
+    uploadToGCSL1(data)
+  } else {
+    sendL1FailedSlackMsg(`l2 ${hash} not found! in Arbitrium!`);
+    return Error("l2TxHash not found.");
   }
 }
 
@@ -258,7 +360,9 @@ async function main() {
   const interval = eval(process.env.SEND_TX_INTERVAL);
   setInterval(() => {
     sendTx();
+    l1Checker();
   }, interval);
+  sendTx();
 }
 
 main();

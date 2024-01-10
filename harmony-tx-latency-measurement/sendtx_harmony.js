@@ -146,11 +146,10 @@ async function sendTx() {
 
     const balance = await web3.eth.getBalance(signerAddress);
 
-    console.log(`Current balance of ${signerAddress} is ${balance / 1e18} ONE`);
-
     if (balance / 1e18 < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_ONE)) {
+      const now = new Date();
       sendSlackMsg(
-        `Current balance of <${
+        `${now}, Current balance of <${
           process.env.SCOPE_URL
         }/address/${signerAddress}|${signerAddress}> is less than ${
           process.env.BALANCE_ALERT_CONDITION_IN_ONE
@@ -213,17 +212,17 @@ async function sendTx() {
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var ONEtoUSD;
-    await CoinGeckoClient.simple
-      .price({
-        ids: ["harmony"],
-        vs_currencies: ["usd"],
-      })
-      .then((response) => {
-        ONEtoUSD = response.data["harmony"]["usd"];
+
+      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=harmony&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+      .then(response => {
+        ONEtoUSD = response.data["harmony"].usd;
       });
+
     data.txFeeInUSD = data.txFee * ONEtoUSD;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
+     const now = new Date();
+    sendSlackMsg(`${now}, failed to execute harmony, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -231,6 +230,7 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
+    sendSlackMsg(`failed to upload harmony, ${err.toString()}`);
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
@@ -256,6 +256,7 @@ async function main() {
   setInterval(() => {
     sendTx();
   }, interval);
+  sendTx()
 }
 
 main();

@@ -145,7 +145,8 @@ async function sendTx(){
 
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_EGLD))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/accounts/${address.toString()}|${address.toString()}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EGLD} EGLD! balance=${balance} EGLD`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/accounts/${address.toString()}|${address.toString()}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EGLD} EGLD! balance=${balance} EGLD`)
         }
 
         const networkConfig = await networkProvider.getNetworkConfig();
@@ -223,16 +224,17 @@ async function sendTx(){
 
         // Calculate Transaction Fee and Get Tx Fee in USD 
         var EGLDtoUSD; 
-        await CoinGeckoClient.simple.price({
-            ids: ["elrond-erd-2"],
-            vs_currencies: ["usd"]
-        }).then((response)=>{
-            EGLDtoUSD = response.data["elrond-erd-2"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=elrond-erd-2&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+        .then(response => {
+            EGLDtoUSD = response.data["elrond-erd-2"].usd;
+        });
         data.txFeeInUSD = data.txFee * EGLDtoUSD 
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
 
     } catch(err){
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute elrond, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -240,6 +242,7 @@ async function sendTx(){
     try{
         await uploadToS3(data)
     } catch(err){
+        sendSlackMsg(`failed to upload elrond, ${err.toString()}`);
         console.log('failed to s3.upload! Printing instead!', err.toString())
         console.log(JSON.stringify(data))
     }
@@ -270,6 +273,7 @@ async function main(){
     setInterval(()=>{
       sendTx()
     }, interval)
+    sendTx()
 }
 
 main();

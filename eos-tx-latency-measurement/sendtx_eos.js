@@ -162,8 +162,9 @@ async function sendTx(){
     const balance = Number(accountInfo.core_liquid_balance.split(' ')[0]); // in TNT(=Temporary Network Token (TNT))    
     if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_EOS))
     {
+      const now = new Date();
       //testnet : https://testnet.eos.io/blockchain-accounts/{accountId}
-      sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/blockchain-accounts/${accountId}|${accountId}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EOS} EOS! balance=${balance} EOS`)
+      sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/blockchain-accounts/${accountId}|${accountId}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_EOS} EOS! balance=${balance} EOS`)
     }
     
     //not broadcast, sign transaction. 
@@ -199,15 +200,17 @@ async function sendTx(){
     // Calculate CPU fee and CPU fee in USD 
     data.txFee = cpuPrice * result.processed.receipt.cpu_usage_us;
     var EOStoUSD;
-    await CoinGeckoClient.simple.price({
-      ids: ["eos"],
-      vs_currencies: ["usd"]
-    }).then((response)=>{
-      EOStoUSD = response.data["eos"]["usd"]
-    })
+
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=eos&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+    .then(response => {
+      EOStoUSD = response.data["eos"].usd;
+    });
+
     data.txFeeInUSD = data.txFee * EOStoUSD 
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
+       const now = new Date();
+    sendSlackMsg(`${now}, failed to execute eos, ${err.toString()}`);
       console.log("failed to execute.", err.toString())
       data.error = err.toString()
       console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -215,6 +218,7 @@ async function sendTx(){
   try{
       await uploadChoice(data)
   } catch(err){
+    sendSlackMsg(`failed to upload eos, ${err.toString()}`);
       console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
       console.log(JSON.stringify(data))
   }
@@ -229,7 +233,7 @@ async function main(){
   setInterval(()=>{
     sendTx()
   }, interval)
-
+  sendTx()
 }
 
 main();

@@ -141,7 +141,8 @@ async function sendTx(){
 
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_BNB))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_BNB} BNB! balance=${balance} BNB`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_BNB} BNB! balance=${balance} BNB`)
         }
 
         await web3.eth.net.getId().then((id)=>{
@@ -205,16 +206,17 @@ async function sendTx(){
 
         // Calculate Transaction Fee and Get Tx Fee in USD
         var BNBtoUSD;
-        await CoinGeckoClient.simple.price({
-            ids: ["binancecoin"],
-            vs_currencies: ["usd"]
-        }).then((response)=>{
-            BNBtoUSD = response.data["binancecoin"]["usd"]
-        })
+        
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=binancecoin&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+        .then(response => {
+            BNBtoUSD = response.data["binancecoin"].usd;
+        });
         data.txFeeInUSD = data.txFee * BNBtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
 
     } catch(err){
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute bnb, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -222,6 +224,7 @@ async function sendTx(){
     try{
         await uploadChoice(data)
     } catch(err){
+        sendSlackMsg(`failed to upload bnb, ${err.toString()}`);
         console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
@@ -244,6 +247,7 @@ async function main(){
     setInterval(()=>{
       sendTx()
     }, interval)
+    sendTx()
 }
 
 main();

@@ -163,7 +163,8 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
         const balance = (await HTTPSProvider.getBalance(address)) * (10**(-18))// getAssetBalance
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_AVAX))
         {
-            sendSlackMsg(`Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_AVAX} AVAX! balance=${balance} AVAX`)
+            const now = new Date();
+            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_AVAX} AVAX! balance=${balance} AVAX`)
         }
 
         const latestNonce = await HTTPSProvider.getTransactionCount(address);
@@ -221,16 +222,18 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
 
         // Get tx Fee and tx Fee in USD
         var AVAXtoUSD;
-        await CoinGeckoClient.simple.price({
-            ids: ["avalanche-2"],
-            vs_currencies: ["usd"]
-        }).then((response)=>{
-            AVAXtoUSD= response.data["avalanche-2"]["usd"]
-        })
+
+        await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=avalanche-2&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+        .then(response => {
+            AVAXtoUSD = response.data["avalanche-2"].usd;
+        });
+
         data.txFee = ethers.utils.formatEther(signature.effectiveGasPrice) * signature.gasUsed;
         data.txFeeInUSD = data.txFee  * AVAXtoUSD;
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){
+         const now = new Date();
+    sendSlackMsg(`${now}, failed to execute avalanche, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -238,6 +241,7 @@ const sendAvax = async (amount, to, maxFeePerGas = undefined, maxPriorityFeePerG
     try{
         await uploadChoice(data)
     } catch(err){
+        sendSlackMsg(`failed to upload avalanche, ${err.toString()}`);
         console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
@@ -264,6 +268,7 @@ async function main(){
         setInterval(()=>{
         sendAvax("0.0", address);
     }, interval)
+    sendAvax("0.0", address);
 }
 
 main();
