@@ -121,16 +121,16 @@ async function uploadToGCS(data) {
 
 async function uploadToGCSL1(data) {
   if (
-    process.env.GCP_PROJECT_ID_L1 === "" ||
-    process.env.GCP_KEY_FILE_PATH_L1 === "" ||
-    process.env.GCP_BUCKET_L1 === ""
+    process.env.GCP_PROJECT_ID === "" ||
+    process.env.GCP_KEY_FILE_PATH === "" ||
+    process.env.GCP_BUCKET === ""
   ) {
     throw "undefined parameters";
   }
 
   const storage = new Storage({
-    projectId: process.env.GCP_PROJECT_ID_L1,
-    keyFilename: process.env.GCP_KEY_FILE_PATH_L1,
+    projectId: process.env.GCP_PROJECT_ID,
+    keyFilename: process.env.GCP_KEY_FILE_PATH,
   });
 
   const filename = await makeParquetFile(data);
@@ -141,8 +141,8 @@ async function uploadToGCSL1(data) {
       destination: destFileName,
     };
 
-    await storage.bucket(process.env.GCP_BUCKET_L1).upload(filename, options);
-    console.log(`${filename} uploaded to ${process.env.GCP_BUCKET_L1}`);
+    await storage.bucket(process.env.GCP_BUCKET).upload(filename, options);
+    console.log(`${filename} uploaded to ${process.env.GCP_BUCKET}`);
   }
 
   await uploadFile().catch(console.error);
@@ -241,19 +241,19 @@ async function sendTx() {
           Number(web3.utils.fromWei(Number(receipt.effectiveGasPrice), "ether"));
       });
 
-      const db = await JSONPreset("db.json", { posts: [] });
-      db.data.posts.push({
-        l2TxHash: data.txhash,
-        createdAt: data.executedAt,
-        status: "pending",
-        l1CommitTiming: null,
-      });
-      db.write();
+    const db = await JSONPreset("db.json", { posts: [] });
+    db.data.posts.push({
+      l2TxHash: data.txhash,
+      createdAt: data.executedAt,
+      status: "pending",
+      l1CommitTiming: null,
+    });
+    db.write();
 
     // Calculate Transaction Fee and Get Tx Fee in USD
     var OPTtoUSD;
 
-      await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=optimism&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
+    await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=optimism&vs_currencies=usd&x_cg_demo_api_key=${process.env.COIN_GECKO_API_KEY}`)
       .then(response => {
         OPTtoUSD = response.data["optimism"].usd;
       });
@@ -263,7 +263,7 @@ async function sendTx() {
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
-     const now = new Date();
+    const now = new Date();
     sendSlackMsg(`${now}, failed to execute optimism, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
