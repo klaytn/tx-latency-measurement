@@ -270,6 +270,7 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
+    const now = new Date();
     sendSlackMsg(`${now}, failed to upload arbitrium, ${err.toString()}`);
 
     console.log(
