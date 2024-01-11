@@ -116,7 +116,7 @@ function loadConfig() {
 }
 
 async function sendSlackMsg(msg) {
-  axios.post(
+  await axios.post(
     process.env.SLACK_API_URL,
     {
       channel: process.env.SLACK_CHANNEL,
@@ -182,7 +182,7 @@ async function sendTx() {
 
     if (balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_APTOS)) {
       const now = new Date();
-      sendSlackMsg(
+      await sendSlackMsg(
         `${now}, Current balance of <${process.env.SCOPE_URL}/address/${address}|${address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_APTOS} APTOS! balance=${balance} APTOS`
       );
     }
@@ -229,7 +229,7 @@ async function sendTx() {
   } catch (err) {
 
      const now = new Date();
-    sendSlackMsg(`${now}, failed to execute aptos, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to execute aptos, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -238,7 +238,7 @@ async function sendTx() {
     await uploadChoice(data);
   } catch (err) {
     const now = new Date();
-    sendSlackMsg(`${now}, failed to upload aptos, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to upload aptos, ${err.toString()}`);
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
@@ -262,11 +262,24 @@ async function main() {
 
   // run sendTx every SEND_TX_INTERVAL
   const interval = eval(process.env.SEND_TX_INTERVAL);
-  setInterval(() => {
-    console.log(`sending tx...`);
-    sendTx();
-  }, interval);
-  sendTx();
+
+  setInterval(async()=>{
+    try{
+        await sendTx()
+    } catch(err){
+        console.log("failed to execute sendTx", err.toString())
+    }
+}, interval)
+try{
+    await sendTx()
+} catch(err){
+    console.log("failed to execute sendTx", err.toString())
+}
 }
 loadConfig();
-main();
+try{
+    main()
+}
+catch(err){
+    console.log("failed to execute main", err.toString())
+}
