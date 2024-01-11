@@ -1,0 +1,5 @@
+{
+  "[css][html][javascript][javascriptreact][json][jsonc][typescript][typescriptreact][svelte]": {
+    "editor.codeActionsOnSave": []
+  }
+}

@@ -181,7 +181,7 @@ async function sendTx(){
         data.resourceUsedOfLatestBlock = Math.round(weightUsed * (10**(-9)))
 
         // Create value transfer transaction.
-        const transfer = api.tx.balances.transfer(senderAddress, 0);
+        const transfer = api.tx.balances.transferAllowDeath(senderAddress, 0);
 
         // Sign transaction.
         await transfer.signAsync(sender);
