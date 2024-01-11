@@ -211,6 +211,7 @@ async function sendTx() {
     data.endTime = end;
     data.latency = end - start;
     data.chainId = process.env.CHAIN_ID;
+    await client.waitForTransactionWithResult(txnHash)
 
     var APTOStoUSD;
 
