@@ -237,6 +237,7 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
+    const now = new Date();
     sendSlackMsg(`${now}, failed to upload aptos, ${err.toString()}`);
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
