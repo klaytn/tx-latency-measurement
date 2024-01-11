@@ -297,7 +297,7 @@ async function l1Checker() {
 
 async function l1commitmentprocess(db, hash, createdAt) {
 
-  var data = {
+  var gcpData = {
     executedAt: new Date().getTime(),
     txhash: "",
     startTime: 0,
@@ -325,17 +325,17 @@ async function l1commitmentprocess(db, hash, createdAt) {
       return Error("l2TxHash not found.");
     }
   }
-  const data = await response.json();
-  const finalityTiming = parseInt(data.root_end, 10);
+  const go_scraper_data = await response.json();
+  const finalityTiming = parseInt(go_scraper_data.root_end, 10);
   const timeTaken = finalityTiming - createdAt;
 
   const postIndex = db.data.posts.findIndex((post) => post.l2TxHash === hash);
   if (postIndex !== -1) {
     db.data.posts[postIndex].l1CommitTiming = timeTaken;
     db.data.posts[postIndex].status = "success";
-    data.latency = timeTaken;
-    data.hash = hash;
-    uploadToGCSL1(data)
+    gcpData.latency = timeTaken;
+    gcpData.hash = hash;
+    uploadToGCSL1(gcpData)
   } else {
     sendL1FailedSlackMsg(`l2 ${hash} not found!`);
     return Error("l2TxHash not found.");
