@@ -50,7 +50,7 @@ async function makeParquetFile(data) {
 }
 
 async function sendSlackMsg(msg) {
-  axios.post(
+  await axios.post(
     process.env.SLACK_API_URL,
     {
       channel: process.env.SLACK_CHANNEL,
@@ -148,7 +148,7 @@ async function sendTx() {
 
     if (balance / 1e18 < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_ONE)) {
       const now = new Date();
-      sendSlackMsg(
+      await sendSlackMsg(
         `${now}, Current balance of <${
           process.env.SCOPE_URL
         }/address/${signerAddress}|${signerAddress}> is less than ${
@@ -222,7 +222,7 @@ async function sendTx() {
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
      const now = new Date();
-    sendSlackMsg(`${now}, failed to execute harmony, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to execute harmony, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -230,7 +230,7 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
-    sendSlackMsg(`failed to upload harmony, ${err.toString()}`);
+    await sendSlackMsg(`failed to upload harmony, ${err.toString()}`);
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
@@ -253,10 +253,23 @@ async function main() {
 
   // run sendTx every SEND_TX_INTERVAL
   const interval = eval(process.env.SEND_TX_INTERVAL);
-  setInterval(() => {
-    sendTx();
-  }, interval);
-  sendTx()
+  setInterval(async()=>{
+    try{
+        await sendTx()
+    } catch(err){
+        console.log("failed to execute sendTx", err.toString())
+    }
+}, interval)
+try{
+    await sendTx()
+} catch(err){
+    console.log("failed to execute sendTx", err.toString())
+}
 }
 
-main();
+try{
+    main()
+}
+catch(err){
+    console.log("failed to execute main", err.toString())
+}

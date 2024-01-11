@@ -57,7 +57,7 @@ async function makeParquetFile(data) {
 }
 
 async function sendSlackMsg(msg) {
-    axios.post(process.env.SLACK_API_URL, {
+    await axios.post(process.env.SLACK_API_URL, {
         'channel':process.env.SLACK_CHANNEL,
         'mrkdown':true,
         'text':msg
@@ -158,7 +158,7 @@ async function sendTx(){
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_DOT))
         {
             const now = new Date();
-            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/account/${senderAddress}|${senderAddress}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_DOT} DOT! balance=${balance} DOT`)
+            await sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/account/${senderAddress}|${senderAddress}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_DOT} DOT! balance=${balance} DOT`)
         }
 
         const startGetBlock = new Date().getTime()
@@ -220,7 +220,7 @@ async function sendTx(){
         })
     } catch(err){
          const now = new Date();
-    sendSlackMsg(`${now}, failed to execute polkadot, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to execute polkadot, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -245,10 +245,23 @@ async function main(){
 
     // run sendTx every SEND_TX_INTERVAL
     const interval = eval(process.env.SEND_TX_INTERVAL)
-    setInterval(()=>{
-        sendTx()
+    setInterval(async()=>{
+        try{
+            await sendTx()
+        } catch(err){
+            console.log("failed to execute sendTx", err.toString())
+        }
     }, interval)
-    sendTx()
+    try{
+        await sendTx()
+    } catch(err){
+        console.log("failed to execute sendTx", err.toString())
+    }
 }
 
-main();
+try{
+    main()
+}
+catch(err){
+    console.log("failed to execute main", err.toString())
+}

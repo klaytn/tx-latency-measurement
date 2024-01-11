@@ -102,7 +102,7 @@ async function uploadChoice(data) {
 }
 
 async function sendSlackMsg(msg) {
-  axios.post(process.env.SLACK_API_URL, {
+  await axios.post(process.env.SLACK_API_URL, {
       'channel':process.env.SLACK_CHANNEL,
       'mrkdown':true,
       'text':msg
@@ -136,7 +136,7 @@ async function sendZeroSol(){
     if(balance*(10**(-9)) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_SOL))
     {
       const now = new Date();
-      sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${keypair.publicKey}?cluster=${process.env.CLUSTER_NAME}|${keypair.publicKey}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SOL} SOL! balance=${balance*(10**(-9))} SOL`)
+      await sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${keypair.publicKey}?cluster=${process.env.CLUSTER_NAME}|${keypair.publicKey}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SOL} SOL! balance=${balance*(10**(-9))} SOL`)
     }
 
     const startGetBlockHash = new Date().getTime();
@@ -204,7 +204,7 @@ async function sendZeroSol(){
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch(err){
      const now = new Date();
-    sendSlackMsg(`${now}, failed to execute solana, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to execute solana, ${err.toString()}`);
     console.log("failed to execute.", err.toString())
     data.error = err.toString()
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -212,7 +212,7 @@ async function sendZeroSol(){
   try{
     await uploadChoice(data)
   } catch(err){
-    sendSlackMsg(`failed to upload solana, ${err.toString()}`);
+    await sendSlackMsg(`failed to upload solana, ${err.toString()}`);
     console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
     console.log(JSON.stringify(data))
   }
@@ -234,11 +234,23 @@ async function main (){
 
   // run sendTx every SEND_TX_INTERVAL(sec).
   const interval = eval(process.env.SEND_TX_INTERVAL)
-      setInterval(()=>{
-      sendZeroSol();
-  }, interval)
-  sendZeroSol();
-
+  setInterval(async()=>{
+    try{
+        await sendZeroSol()
+    } catch(err){
+        console.log("failed to execute sendTx", err.toString())
+    }
+}, interval)
+try{
+    await sendZeroSol()
+} catch(err){
+    console.log("failed to execute sendTx", err.toString())
+}
 }
 
-main();
+try{
+    main()
+}
+catch(err){
+    console.log("failed to execute main", err.toString())
+}

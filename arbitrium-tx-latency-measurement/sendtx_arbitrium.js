@@ -53,7 +53,7 @@ async function makeParquetFile(data) {
 }
 
 async function sendSlackMsg(msg) {
-  axios.post(
+  await axios.post(
     process.env.SLACK_API_URL,
     {
       channel: process.env.SLACK_CHANNEL,
@@ -182,7 +182,7 @@ async function sendTx() {
 
     if (balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_ARB)) {
       const now = new Date();
-      sendSlackMsg(
+      await sendSlackMsg(
         `${now}, Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_ARB} ARB! balance=${balance} ARB`
       );
     }
@@ -262,7 +262,7 @@ async function sendTx() {
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
     const now = new Date();
-    sendSlackMsg(`${now}, failed to execute arbitrum, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to execute arbitrum, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -271,7 +271,7 @@ async function sendTx() {
     await uploadChoice(data);
   } catch (err) {
     const now = new Date();
-    sendSlackMsg(`${now}, failed to upload arbitrium, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to upload arbitrium, ${err.toString()}`);
 
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
@@ -319,10 +319,10 @@ async function l1commitmentprocess(db, hash, createdAt) {
     if (postIndex !== -1) {
       console.log("L1 tx hash not found");
       db.data.posts[postIndex].status = "failed";
-      sendSlackMsg(`L1 tx hash not found for ${hash} in Arbitrium!`);
+      await sendSlackMsg(`L1 tx hash not found for ${hash} in Arbitrium!`);
       return null;
     } else {
-      sendSlackMsg(`l2 ${hash} not found in Arbitrium!`);
+      await sendSlackMsg(`l2 ${hash} not found in Arbitrium!`);
       return Error("l2TxHash not found.");
     }
   }
@@ -338,7 +338,7 @@ async function l1commitmentprocess(db, hash, createdAt) {
     gcpData.hash = hash;
     uploadToGCSL1(gcpData)
   } else {
-    sendL1FailedSlackMsg(`l2 ${hash} not found! in Arbitrium!`);
+    await sendSlackMsg(`l2 ${hash} not found! in Arbitrium!`);
     return Error("l2TxHash not found.");
   }
 }
@@ -359,11 +359,25 @@ async function main() {
 
   // run sendTx every SEND_TX_INTERVAL
   const interval = eval(process.env.SEND_TX_INTERVAL);
-  setInterval(() => {
-    sendTx();
-    l1Checker();
-  }, interval);
-  sendTx();
+  setInterval(async()=>{
+    try{
+        await sendTx()
+        await l1Checker();
+    } catch(err){
+        console.log("failed to execute sendTx", err.toString())
+    }
+}, interval)
+try{
+    await sendTx()
+} catch(err){
+    console.log("failed to execute sendTx", err.toString())
+}
 }
 
-main();
+
+try{
+    main()
+}
+catch(err){
+    console.log("failed to execute main", err.toString())
+}

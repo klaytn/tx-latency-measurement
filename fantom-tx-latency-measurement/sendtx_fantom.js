@@ -50,7 +50,7 @@ async function makeParquetFile(data) {
 }
 
 async function sendSlackMsg(msg) {
-    axios.post(process.env.SLACK_API_URL, {
+    await axios.post(process.env.SLACK_API_URL, {
         'channel':process.env.SLACK_CHANNEL,
         'mrkdown':true,
         'text':msg
@@ -143,7 +143,7 @@ async function sendTx(){
         if(balance < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_FTM))
         {
             const now = new Date();
-            sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_FTM} FTM! balance=${balance} FTM`)
+            await sendSlackMsg(`${now}, Current balance of <${process.env.SCOPE_URL}/address/${signer.address}|${signer.address}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_FTM} FTM! balance=${balance} FTM`)
         }
 
         await web3.eth.net.getId().then((id)=>{
@@ -222,7 +222,7 @@ async function sendTx(){
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){
          const now = new Date();
-    sendSlackMsg(`${now}, failed to execute fantom, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to execute fantom, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -230,7 +230,7 @@ async function sendTx(){
     try{
         await uploadChoice(data)
     } catch(err){
-        sendSlackMsg(`failed to upload fantom, ${err.toString()}`);
+        await sendSlackMsg(`failed to upload fantom, ${err.toString()}`);
         console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
         console.log(JSON.stringify(data))
     }
@@ -250,10 +250,23 @@ async function main(){
 
     // run sendTx every SEND_TX_INTERVAL
     const interval = eval(process.env.SEND_TX_INTERVAL)
-    setInterval(()=>{
-      sendTx()
+    setInterval(async()=>{
+        try{
+            await sendTx()
+        } catch(err){
+            console.log("failed to execute sendTx", err.toString())
+        }
     }, interval)
-    sendTx()
+    try{
+        await sendTx()
+    } catch(err){
+        console.log("failed to execute sendTx", err.toString())
+    }
 }
 
-main();
+try{
+    main()
+}
+catch(err){
+    console.log("failed to execute main", err.toString())
+}
