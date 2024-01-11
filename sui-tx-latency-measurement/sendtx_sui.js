@@ -123,7 +123,7 @@ function loadConfig() {
 }
 
 async function sendSlackMsg(msg) {
-  axios.post(
+  await axios.post(
     process.env.SLACK_API_URL,
     {
       channel: process.env.SLACK_CHANNEL,
@@ -143,7 +143,7 @@ async function checkBalance(addr) {
   const balance = await client.getCoins({ owner: addr });
   if (parseFloat(balance) < parseFloat(process.env.BALANCE_ALERT_CONDITION_IN_SUI)) {
     const now = new Date();
-    sendSlackMsg(
+    await sendSlackMsg(
       `${now}, Current balance of <${process.env.SCOPE_URL}/address/${addr}=${process.env.CHAIN_ID}|${addr}> is less than ${process.env.BALANCE_ALERT_CONDITION_IN_SUI} SUI! balance=${balance}`
     );
   }
@@ -238,7 +238,7 @@ async function sendTx() {
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
      const now = new Date();
-    sendSlackMsg(`${now}, failed to execute sui, ${err.toString()}`);
+    await sendSlackMsg(`${now}, failed to execute sui, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
@@ -246,7 +246,7 @@ async function sendTx() {
   try {
     await uploadChoice(data);
   } catch (err) {
-    sendSlackMsg(`failed to upload sui, ${err.toString()}`);
+    await sendSlackMsg(`failed to upload sui, ${err.toString()}`);
     console.log(
       `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
       err.toString()
@@ -269,10 +269,23 @@ async function main() {
 
   // run sendTx every 1 min..
   const interval = eval(process.env.SEND_TX_INTERVAL);
-  setInterval(() => {
-    sendTx();
-  }, interval);
-  sendTx();
+  setInterval(async()=>{
+    try{
+        await sendTx()
+    } catch(err){
+        console.log("failed to execute sendTx", err.toString())
+    }
+}, interval)
+try{
+    await sendTx()
+} catch(err){
+    console.log("failed to execute sendTx", err.toString())
+}
 }
 loadConfig();
-main();
+try{
+    main()
+}
+catch(err){
+    console.log("failed to execute main", err.toString())
+}
