@@ -208,6 +208,7 @@ async function sendTx() {
     data.txhash = transfer.digest;
     data.chainId = process.env.CHAIN_ID;
 
+    await new Promise((resolve) => setTimeout(resolve, 30000));
     const transactionBlockDetails = await client.getTransactionBlock({
       digest: transfer.digest,
       options: {
