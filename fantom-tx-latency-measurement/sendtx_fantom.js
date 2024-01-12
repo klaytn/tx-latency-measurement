@@ -205,11 +205,22 @@ async function sendTx(){
             const end = new Date().getTime()
             data.endTime = end
             data.latency = end-start
-            data.txFee = receipt.gasUsed * web3.utils.fromWei(receipt.effectiveGasPrice.toString())
+            try{
+                data.txFee = receipt.gasUsed * web3.utils.fromWei(receipt.effectiveGasPrice.toString())
+            }
+            catch(err){
+                console.log("failed to calculate txFee", err.toString())
+            }
         })
         .on('error', function(err){
             PrevNonce = originalPrevNonce
         })
+
+        if (!data.txFee) {
+            await new Promise(resolve => setTimeout(resolve, 30000));
+            let result = await web3.eth.getTransactionReceipt(data.txhash)
+            data.txFee = result.gasUsed * web3.utils.fromWei(result.effectiveGasPrice.toString())
+        }
 
         // Calculate Transaction Fee and Get Tx Fee in USD
         var FTMtoUSD;
