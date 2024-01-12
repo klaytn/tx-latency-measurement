@@ -133,7 +133,9 @@ async function sendTx(){
         numOfTxInLatestBlock: 0,
         pingTime:0
     }
-
+    
+    var transactionError = false
+    
     try{
         const signer = web3.eth.accounts.privateKeyToAccount(
             process.env.SIGNER_PRIVATE_KEY
@@ -221,14 +223,19 @@ async function sendTx(){
 
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     } catch(err){
-         const now = new Date();
-    await sendSlackMsg(`${now}, failed to execute fantom, ${err.toString()}`);
+        transactionError = true
+        const now = new Date();
+        await sendSlackMsg(`${now}, failed to execute fantom, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
-        // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+        console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     }
     try{
-        await uploadChoice(data)
+        if (!transactionError){
+            await uploadChoice(data)
+        } else {
+            console.log("not uploading fantom data due to transaction error")
+        }
     } catch(err){
         await sendSlackMsg(`failed to upload fantom, ${err.toString()}`);
         console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
