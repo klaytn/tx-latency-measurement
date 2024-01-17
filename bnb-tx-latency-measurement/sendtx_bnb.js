@@ -213,7 +213,13 @@ async function sendTx(){
         });
         data.txFeeInUSD = data.txFee * BNBtoUSD
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-
+        try{
+            await uploadChoice(data)
+        } catch(err){
+            await sendSlackMsg(`failed to upload bnb, ${err.toString()}`);
+            console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
+            console.log(JSON.stringify(data))
+        }
     } catch(err){
          const now = new Date();
     await sendSlackMsg(`${now}, failed to execute bnb, ${err.toString()}`);
@@ -221,13 +227,7 @@ async function sendTx(){
         data.error = err.toString()
         console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
     }
-    try{
-        await uploadChoice(data)
-    } catch(err){
-        await sendSlackMsg(`failed to upload bnb, ${err.toString()}`);
-        console.log(`failed to ${process.env.UPLOAD_METHOD === 'AWS'? 's3': 'gcs'}.upload!! Printing instead!`, err.toString())
-        console.log(JSON.stringify(data))
-    }
+
 }
 
 async function main(){

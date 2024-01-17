@@ -262,21 +262,21 @@ async function sendTx() {
     data.txFeeInUSD = data.txFee * OPTtoUSD;
 
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+    try {
+      await uploadChoice(data);
+    } catch (err) {
+      await sendSlackMsg(`failed to upload optimism, ${err.toString()}`);
+      console.log(
+        `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
+        err.toString()
+      );
+    }
   } catch (err) {
     const now = new Date();
     await sendSlackMsg(`${now}, failed to execute optimism, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-  }
-  try {
-    await uploadChoice(data);
-  } catch (err) {
-    await sendSlackMsg(`failed to upload optimism, ${err.toString()}`);
-    console.log(
-      `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
-      err.toString()
-    );
   }
 }
 
