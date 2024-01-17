@@ -258,7 +258,16 @@ async function sendTx() {
         ARBtoUSD = response.data["arbitrum"].usd;
       });
     data.txFeeInUSD = data.txFee * ARBtoUSD;
-
+    try {
+      await uploadChoice(data);
+    } catch (err) {
+      await sendSlackMsg(`failed to upload arbitrium, ${err.toString()}`);
+  
+      console.log(
+        `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
+        err.toString()
+      );
+    }
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   } catch (err) {
     const now = new Date();
@@ -266,17 +275,6 @@ async function sendTx() {
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-  }
-  try {
-    await uploadChoice(data);
-  } catch (err) {
-    const now = new Date();
-    await sendSlackMsg(`${now}, failed to upload arbitrium, ${err.toString()}`);
-
-    console.log(
-      `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
-      err.toString()
-    );
   }
 }
 
