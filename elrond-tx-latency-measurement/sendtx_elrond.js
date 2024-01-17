@@ -231,20 +231,19 @@ async function sendTx(){
         });
         data.txFeeInUSD = data.txFee * EGLDtoUSD 
         // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-
+        try{
+            await uploadToS3(data)
+        } catch(err){
+            await sendSlackMsg(`failed to upload elrond, ${err.toString()}`);
+            console.log('failed to s3.upload! Printing instead!', err.toString())
+            console.log(JSON.stringify(data))
+        }
     } catch(err){
          const now = new Date();
     await sendSlackMsg(`${now}, failed to execute elrond, ${err.toString()}`);
         console.log("failed to execute.", err.toString())
         data.error = err.toString()
         console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-    }
-    try{
-        await uploadToS3(data)
-    } catch(err){
-        await sendSlackMsg(`failed to upload elrond, ${err.toString()}`);
-        console.log('failed to s3.upload! Printing instead!', err.toString())
-        console.log(JSON.stringify(data))
     }
 }
 

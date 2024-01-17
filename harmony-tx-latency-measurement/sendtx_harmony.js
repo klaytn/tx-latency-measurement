@@ -220,22 +220,22 @@ async function sendTx() {
 
     data.txFeeInUSD = data.txFee * ONEtoUSD;
     // console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
+    try {
+      await uploadChoice(data);
+    } catch (err) {
+      await sendSlackMsg(`failed to upload harmony, ${err.toString()}`);
+      console.log(
+        `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
+        err.toString()
+      );
+      console.log(JSON.stringify(data));
+    }
   } catch (err) {
      const now = new Date();
     await sendSlackMsg(`${now}, failed to execute harmony, ${err.toString()}`);
     console.log("failed to execute.", err.toString());
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
-  }
-  try {
-    await uploadChoice(data);
-  } catch (err) {
-    await sendSlackMsg(`failed to upload harmony, ${err.toString()}`);
-    console.log(
-      `failed to ${process.env.UPLOAD_METHOD === "AWS" ? "s3" : "gcs"}.upload!! Printing instead!`,
-      err.toString()
-    );
-    console.log(JSON.stringify(data));
   }
 }
 
