@@ -239,8 +239,7 @@ async function sendTx() {
         data.txFee =
           Number(receipt.gasUsed) *
           Number(web3.utils.fromWei(Number(receipt.effectiveGasPrice), "ether"));
-      })
-      .catch(console.error);
+      });
 
     const db = await JSONPreset("db.json", { posts: [] });
     db.data.posts.push({
