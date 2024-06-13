@@ -285,3 +285,20 @@ try{
 catch(err){
     console.log("failed to execute main", err.toString(), err.stack)
 }
+
+// failed to execute. TransactionBlockTimeoutError: Transaction started at 57825013 but was not mined within 50 blocks. Please make sure your transaction was properly sent and there no pervious pending transaction for the same account. However, be aware that it might still be mined!
+// 	Transaction Hash: 0x56de0d8949eb9e19bbe6403f10500c3f5a185db15e2bad86f14caa122899422b
+// 1717655549704,137,0x56de0d8949eb9e19bbe6403f10500c3f5a185db15e2bad86f14caa122899422b,1717655557543,0,0,0,0,26576445,98,1124,TransactionBlockTimeoutError: Transaction started at 57825013 but was not mined within 50 blocks. Please make sure your transaction was properly sent and there no pervious pending transaction for the same account. However, be aware that it might still be mined!
+// 	Transaction Hash: 0x56de0d8949eb9e19bbe6403f10500c3f5a185db15e2bad86f14caa122899422b
+
+process.on('uncaughtException', function(err) {
+
+  const errcode = "failed to execute. TransactionBlockTimeoutError"
+
+  if (err.toString().includes(errcode)) {
+    console.log(err)
+    sendSlackMsg(`TransactionBlockTimeoutError: ${err.toString()}`)
+    process.exit(1);
+  }
+}
+)
