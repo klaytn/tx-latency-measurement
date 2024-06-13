@@ -249,8 +249,8 @@ async function sendTx() {
     }
   } catch (err) {
      const now = new Date();
-    await sendSlackMsg(`${now}, failed to execute sui, ${err.toString()}`);
-    console.log("failed to execute.", err.toString());
+    await sendSlackMsg(`${now}, failed to execute sui, ${err.toString()}, ${err.stack}`);
+    console.log("failed to execute.", err.toString(), err.stack);
     data.error = err.toString();
     console.log(`${data.executedAt},${data.chainId},${data.txhash},${data.startTime},${data.endTime},${data.latency},${data.txFee},${data.txFeeInUSD},${data.resourceUsedOfLatestBlock},${data.numOfTxInLatestBlock},${data.pingTime},${data.error}`)
   }
@@ -275,13 +275,13 @@ async function main() {
     try{
         await sendTx()
     } catch(err){
-        console.log("failed to execute sendTx", err.toString())
+        console.log("failed to execute sendTx", err.toString(), err.stack)
     }
 }, interval)
 try{
     await sendTx()
 } catch(err){
-    console.log("failed to execute sendTx", err.toString())
+    console.log("failed to execute sendTx", err.toString(), err.stack)
 }
 }
 loadConfig();
@@ -289,5 +289,5 @@ try{
     main()
 }
 catch(err){
-    console.log("failed to execute main", err.toString())
+    console.log("failed to execute main", err.toString(), err.stack)
 }
